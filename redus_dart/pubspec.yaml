@@ -1,0 +1,14 @@
+name: redus
+description: A Vue-like fine-grained reactivity system for Dart. Developer utilities for convenience and performance.
+version: 0.1.0
+repository: https://github.com/user/redus
+
+environment:
+  sdk: ^3.0.0
+
+dependencies:
+  meta: ^1.9.0
+
+dev_dependencies:
+  test: ^1.24.0
+  lints: ^3.0.0
