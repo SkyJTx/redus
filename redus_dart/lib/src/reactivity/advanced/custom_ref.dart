@@ -78,5 +78,8 @@ class _CustomRef<T> implements Ref<T> {
   }
 
   @override
+  T call() => value;
+
+  @override
   String toString() => 'CustomRef($value)';
 }

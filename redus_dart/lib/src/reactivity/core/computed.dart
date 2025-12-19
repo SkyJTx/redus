@@ -109,6 +109,12 @@ class Computed<T> {
     _dirty = true;
   }
 
+  /// Makes Computed callable, returning the reactive value.
+  ///
+  /// This allows Computed to be used as a `T Function()` for strong typing
+  /// in watch() and other APIs. Same as accessing [value].
+  T call() => value;
+
   @override
   String toString() => 'Computed(${_dirty ? "dirty" : _value})';
 }

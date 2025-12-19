@@ -66,6 +66,21 @@ class Ref<T> {
     _dep.trigger();
   }
 
+  /// Makes Ref callable, returning the reactive value.
+  ///
+  /// This allows Ref to be used as a `T Function()` for strong typing
+  /// in watch() and other APIs. Same as accessing [value].
+  ///
+  /// Example:
+  /// ```dart
+  /// final count = ref(0);
+  /// print(count()); // 0 - same as count.value
+  ///
+  /// // Use in watch with type inference:
+  /// watch(count, (val, old, _) => print(val));
+  /// ```
+  T call() => value;
+
   @override
   String toString() => 'Ref($_value)';
 }

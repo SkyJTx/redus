@@ -1,56 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:redus_flutter/redus_flutter.dart';
+import 'screens/todo_screen.dart';
+import 'services/todo_store.dart';
 
 void main() {
-  runApp(MaterialApp(title: 'Redus Flutter Example', home: CounterComponent()));
+  // Register dependencies
+  register<TodoStore>(TodoStore());
+
+  runApp(const TodoApp());
 }
 
-/// A simple counter component demonstrating:
-/// - Reactive state with `ref`
-/// - Lifecycle hooks
-/// - Component rebuilding
-class CounterComponent extends Component {
-  CounterComponent({super.key});
-
-  late final Ref<int> count;
+class TodoApp extends StatelessWidget {
+  const TodoApp({super.key});
 
   @override
-  void setup() {
-    // Create reactive state
-    count = ref(0);
-
-    // Register lifecycle hooks
-    onMounted(() {
-      debugPrint('CounterComponent mounted!');
-    });
-
-    onUpdated(() {
-      debugPrint('CounterComponent updated! Count: ${count.value}');
-    });
-
-    onUnmounted(() {
-      debugPrint('CounterComponent unmounted!');
-    });
-  }
-
-  @override
-  Widget render(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Redus Flutter Example')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text('${count.value}', style: Theme.of(context).textTheme.headlineMedium),
-          ],
-        ),
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Redus Todo Example',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => count.value++,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
+      home: TodoScreen(),
     );
   }
 }

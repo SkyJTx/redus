@@ -98,66 +98,39 @@ WatchHandle watchSyncEffect(EffectFn effect) {
   );
 }
 
-/// Watch type for determining source type.
-sealed class _WatchSource<T> {
-  T getValue();
-}
-
-class _RefSource<T> implements _WatchSource<T> {
-  final Ref<T> ref;
-  _RefSource(this.ref);
-
-  @override
-  T getValue() => ref.value;
-}
-
-class _ComputedSource<T> implements _WatchSource<T> {
-  final Computed<T> computed;
-  _ComputedSource(this.computed);
-
-  @override
-  T getValue() => computed.value;
-}
-
-class _GetterSource<T> implements _WatchSource<T> {
-  final WatchGetter<T> getter;
-  _GetterSource(this.getter);
-
-  @override
-  T getValue() => getter();
-}
-
-/// Watches one or more reactive sources and invokes a callback when they change.
+/// Watches a reactive source and invokes a callback when it changes.
 ///
 /// Unlike [watchEffect], [watch] is lazy by default - the callback is only
 /// called when the watched source has changed, not immediately on creation.
 ///
-/// The source can be:
-/// - A [Ref]
-/// - A [Computed]
-/// - A getter function that returns a value
-/// - A [List] of the above
+/// The source is a `T Function()` - this can be:
+/// - A [Ref] (e.g., `count`) - since Ref is callable
+/// - A [Computed] (e.g., `doubled`) - since Computed is callable
+/// - A getter function (e.g., `() => x.value + y.value`)
 ///
 /// Example:
 /// ```dart
 /// final count = ref(0);
 ///
-/// watch(
-///   count,
-///   (value, oldValue, onCleanup) {
-///     print('Count changed from $oldValue to $value');
-///   },
-/// );
+/// // Pass Ref directly - type is inferred!
+/// watch(count, (value, oldValue, onCleanup) {
+///   print('Count changed from $oldValue to $value');
+/// });
+///
+/// // Or use a getter for derived values:
+/// watch(() => count.value * 2, (doubled, old, _) {
+///   print('Doubled: $doubled');
+/// });
 ///
 /// count.value = 1;
 /// // Prints: "Count changed from 0 to 1"
+/// // Prints: "Doubled: 2"
 /// ```
 WatchHandle watch<T>(
-  Object source,
+  T Function() source,
   WatchCallback<T> callback, {
   WatchOptions options = WatchOptions.defaults,
 }) {
-  final watchSource = _resolveSource<T>(source);
   T? oldValue;
   var isFirst = true;
 
@@ -165,7 +138,7 @@ WatchHandle watch<T>(
 
   effect = ReactiveEffect(
     () {
-      final newValue = watchSource.getValue();
+      final newValue = source();
 
       if (isFirst) {
         oldValue = newValue;
@@ -198,30 +171,19 @@ WatchHandle watch<T>(
   return WatchHandle._(effect);
 }
 
-_WatchSource<T> _resolveSource<T>(Object source) {
-  if (source is Ref<T>) {
-    return _RefSource<T>(source);
-  }
-  if (source is Computed<T>) {
-    return _ComputedSource<T>(source);
-  }
-  if (source is WatchGetter<T>) {
-    return _GetterSource<T>(source);
-  }
-  throw ArgumentError(
-    'Watch source must be a Ref<$T>, Computed<$T>, or getter function. '
-    'Got: ${source.runtimeType}',
-  );
-}
-
 /// Watches multiple sources and invokes callback when any of them change.
+///
+/// Each source is a `T Function()` - this can be:
+/// - A [Ref] (e.g., `firstName`) - since Ref is callable
+/// - A [Computed] - since Computed is callable
+/// - A getter function
 ///
 /// Example:
 /// ```dart
 /// final firstName = ref('John');
 /// final lastName = ref('Doe');
 ///
-/// watchMultiple(
+/// watchMultiple<String>(
 ///   [firstName, lastName],
 ///   (values, oldValues, onCleanup) {
 ///     print('Name changed to: ${values[0]} ${values[1]}');
@@ -229,11 +191,10 @@ _WatchSource<T> _resolveSource<T>(Object source) {
 /// );
 /// ```
 WatchHandle watchMultiple<T>(
-  List<Object> sources,
+  List<T Function()> sources,
   void Function(List<T> values, List<T?> oldValues, OnCleanup onCleanup) callback, {
   WatchOptions options = WatchOptions.defaults,
 }) {
-  final watchSources = sources.map(_resolveSource<T>).toList();
   List<T>? oldValues;
   var isFirst = true;
 
@@ -241,7 +202,7 @@ WatchHandle watchMultiple<T>(
 
   effect = ReactiveEffect(
     () {
-      final newValues = watchSources.map((s) => s.getValue()).toList();
+      final newValues = sources.map((s) => s()).toList();
 
       if (isFirst) {
         oldValues = List<T>.from(newValues);
@@ -284,3 +245,4 @@ WatchHandle watchMultiple<T>(
 
   return WatchHandle._(effect);
 }
+

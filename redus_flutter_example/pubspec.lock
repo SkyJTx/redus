@@ -142,11 +142,10 @@ packages:
   redus:
     dependency: transitive
     description:
-      name: redus
-      sha256: d153def35022a39c4b334cda37309b98469873b5a726b46f2ff4d8a21944bef9
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.0"
+      path: "../redus_dart"
+      relative: true
+    source: path
+    version: "0.3.0"
   redus_flutter:
     dependency: "direct main"
     description:

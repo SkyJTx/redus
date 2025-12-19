@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2024-12-19
+
+### Added
+
+- **Callable Ref and Computed** - Both `Ref<T>` and `Computed<T>` now have a `call()` method
+  - `count()` is equivalent to `count.value`
+  - Allows `Ref<T>` and `Computed<T>` to be used as `T Function()`
+  - Enables **perfect type inference** in `watch()` and other APIs
+
+### Changed
+
+- **Strongly typed `watch()` API** - Source is now `T Function()` instead of `Object`
+  - Type inference works automatically: `watch(count, (val, old, _) => ...)` infers `T` as `int`
+  - No more need for explicit `watch<int>(...)` calls
+  - Both `Ref` and `Computed` work directly as sources (since they're callable)
+  - Getter functions `() => x.value` also work with full inference
+
+- **Strongly typed `watchMultiple()` API** - Sources are now `List<T Function()>`
+
 ## [0.2.0] - 2024-12-19
 
 ### Added
