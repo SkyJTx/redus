@@ -11,5 +11,6 @@ export 'types.dart';
 export 'ref.dart';
 export 'computed.dart';
 export 'readonly.dart';
+export 'effect.dart' show onWatcherCleanup, Scheduler, ReactiveEffect, activeEffect, effectStack;
 export 'watch.dart' hide activeEffect, effectStack;
-export 'effect.dart' show onWatcherCleanup, Scheduler;
+

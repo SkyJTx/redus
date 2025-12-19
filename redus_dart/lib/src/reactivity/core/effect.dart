@@ -3,20 +3,17 @@ library;
 
 import 'dart:async';
 
-import 'package:meta/meta.dart';
-
 import 'dep.dart';
 import 'types.dart';
 
 /// The currently active effect being executed.
 ///
 /// This is used during dependency tracking to know which effect
-/// is currently reading reactive values.
-@internal
+/// is currently reading reactive values. Also used by redus_flutter
+/// for automatic component rendering.
 ReactiveEffect? activeEffect;
 
 /// Stack of active effects for nested effect handling.
-@internal
 final List<ReactiveEffect> effectStack = [];
 
 /// The current effect for cleanup registration.

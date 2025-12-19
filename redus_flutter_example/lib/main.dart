@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:redus_flutter/redus_flutter.dart';
 
-/// Example demonstrating Redus Flutter Component system.
-///
-/// Run with: `flutter run example/example.dart`
 void main() {
-  runApp(MaterialApp(home: CounterComponent()));
+  runApp(MaterialApp(title: 'Redus Flutter Example', home: CounterComponent()));
 }
 
 /// A simple counter component demonstrating:
@@ -39,20 +36,13 @@ class CounterComponent extends Component {
   @override
   Widget render(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Redus Flutter Example'),
-      ),
+      appBar: AppBar(title: const Text('Redus Flutter Example')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '${count.value}',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
+            const Text('You have pushed the button this many times:'),
+            Text('${count.value}', style: Theme.of(context).textTheme.headlineMedium),
           ],
         ),
       ),

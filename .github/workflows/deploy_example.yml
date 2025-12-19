@@ -1,0 +1,41 @@
+name: Deploy Flutter Example
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'redus_flutter_example/**'
+      - 'redus_flutter/**'
+      - 'redus_dart/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+        working-directory: redus_flutter_example
+
+      - name: Build Web
+        run: flutter build web --base-href "/redus/flutter_example/" --release
+        working-directory: redus_flutter_example
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./redus_flutter_example/build/web
+          destination_dir: flutter_example
+          keep_files: true
+          commit_message: "Deploy flutter_example to gh-pages"

@@ -8,16 +8,17 @@ import 'lifecycle.dart';
 
 export 'lifecycle.dart';
 
-/// Current component state for accessing rebuild function.
-_ComponentState? _currentComponentState;
-
 /// A Vue-like component with reactive state and lifecycle hooks.
 ///
 /// Components provide:
 /// - [setup] method for defining reactive state and registering lifecycle hooks
-/// - [build] method for building the UI
+/// - [render] method for building the UI with automatic reactivity tracking
 /// - Automatic effect scope for cleanup
 /// - Lifecycle hooks (onMounted, onUpdated, onUnmounted, etc.)
+///
+/// **Automatic Reactivity**: Any reactive value (Ref, Computed) accessed in
+/// [render] is automatically tracked. When these values change, the component
+/// rebuilds automatically - no manual `watchEffect` or `rebuild()` needed!
 ///
 /// Example:
 /// ```dart
@@ -30,16 +31,12 @@ _ComponentState? _currentComponentState;
 ///
 ///     onMounted(() => print('Counter mounted!'));
 ///     onUnmounted(() => print('Counter unmounted!'));
-///
-///     // Set up reactive rebuilding
-///     watchEffect((_) {
-///       count.value; // Track dependency
-///       rebuild(); // Trigger rebuild when value changes
-///     });
 ///   }
 ///
 ///   @override
 ///   Widget render(BuildContext context) {
+///     // Accessing count.value automatically tracks it!
+///     // Component rebuilds when count changes.
 ///     return GestureDetector(
 ///       onTap: () => count.value++,
 ///       child: Text('Count: ${count.value}'),
@@ -60,22 +57,15 @@ abstract class Component extends StatefulWidget with LifecycleHooks {
   /// Use this to:
   /// - Initialize reactive state with [ref], [computed], etc.
   /// - Register lifecycle hooks with [onMounted], [onUnmounted], etc.
-  /// - Set up watchers with [watchEffect], [watch], etc.
+  /// - Set up watchers with [watchEffect], [watch], etc. for side effects
   void setup();
 
   /// Override to build the component's UI.
   ///
   /// This is called whenever the component needs to rebuild.
-  /// Access reactive values here to create the widget tree.
+  /// **Automatic tracking**: Any reactive values (Ref, Computed) accessed
+  /// here are automatically tracked. The component rebuilds when they change.
   Widget render(BuildContext context);
-
-  /// Trigger a rebuild of this component.
-  ///
-  /// Call this in a watchEffect to rebuild when dependencies change.
-  /// Note: This uses the current component state context set during setup.
-  void rebuild() {
-    _currentComponentState?.triggerRebuild();
-  }
 
   @override
   State<Component> createState() => _ComponentState();
@@ -83,30 +73,31 @@ abstract class Component extends StatefulWidget with LifecycleHooks {
 
 class _ComponentState extends State<Component> with RouteAware {
   late EffectScope _scope;
+  late ReactiveEffect _renderEffect;
   bool _isFirstBuild = true;
+  bool _isRendering = false;
   Object? _error;
-
-  /// Trigger a rebuild of this component.
-  void triggerRebuild() {
-    if (mounted && !_isFirstBuild) {
-      setState(() {});
-    }
-  }
 
   @override
   void initState() {
     super.initState();
     _scope = effectScope();
 
-    // Set current state context for rebuild access
-    _currentComponentState = this;
+    // Create a render effect that triggers rebuilds when dependencies change
+    _renderEffect = ReactiveEffect(
+      () {
+        // Only trigger rebuild if we're not currently rendering
+        // and this is not the first build
+        if (mounted && !_isFirstBuild && !_isRendering) {
+          setState(() {});
+        }
+      },
+      flush: FlushMode.sync, // Sync flush for immediate UI updates
+    );
 
     _scope.run(() {
       widget.setup();
     });
-
-    // Clear context after setup (will be set again during build)
-    _currentComponentState = null;
 
     widget.runBeforeMount();
   }
@@ -133,18 +124,34 @@ class _ComponentState extends State<Component> with RouteAware {
 
     Widget? result;
 
-    _scope.run(() {
-      try {
-        result = widget.render(context);
-      } catch (e, stack) {
-        if (widget.runErrorCaptured(e, stack)) {
-          _error = e;
-          result = _buildError();
-        } else {
-          rethrow;
+    // Set render effect as active to track dependencies
+    _isRendering = true;
+    effectStack.add(_renderEffect);
+    final previousEffect = activeEffect;
+    activeEffect = _renderEffect;
+
+    try {
+      _scope.run(() {
+        try {
+          result = widget.render(context);
+        } catch (e, stack) {
+          if (widget.runErrorCaptured(e, stack)) {
+            _error = e;
+            result = _buildError();
+          } else {
+            rethrow;
+          }
         }
+      });
+    } finally {
+      // Restore previous effect state
+      effectStack.removeLast();
+      activeEffect = effectStack.isEmpty ? null : effectStack.last;
+      if (previousEffect != null && effectStack.contains(previousEffect)) {
+        activeEffect = previousEffect;
       }
-    });
+      _isRendering = false;
+    }
 
     // Schedule post-build callbacks
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -183,7 +190,7 @@ class _ComponentState extends State<Component> with RouteAware {
   @override
   void dispose() {
     widget.runBeforeUnmount();
-    _currentComponentState = null;
+    _renderEffect.stop();
     _scope.stop();
     widget.runUnmounted();
     super.dispose();

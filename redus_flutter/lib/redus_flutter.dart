@@ -27,7 +27,7 @@
 ///   }
 /// }
 /// ```
-library redus_flutter;
+library;
 
 // Re-export redus reactivity
 export 'package:redus/reactivity.dart';
