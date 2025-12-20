@@ -7,7 +7,8 @@ import '../core/ref.dart';
 /// Factory function for creating a custom ref.
 ///
 /// Receives track and trigger functions, returns get and set methods.
-typedef CustomRefFactory<T> = ({T Function() get, void Function(T) set}) Function(
+typedef CustomRefFactory<T> = ({T Function() get, void Function(T) set})
+    Function(
   void Function() track,
   void Function() trigger,
 );

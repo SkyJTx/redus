@@ -79,7 +79,7 @@ void main() {
 
       test('isRegistered works with keys', () {
         register<String>('test', key: #myKey);
-        
+
         expect(isRegistered<String>(key: #myKey), isTrue);
         expect(isRegistered<String>(), isFalse);
         expect(isRegistered<String>(key: #otherKey), isFalse);

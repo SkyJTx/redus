@@ -192,7 +192,8 @@ WatchHandle watch<T>(
 /// ```
 WatchHandle watchMultiple<T>(
   List<T Function()> sources,
-  void Function(List<T> values, List<T?> oldValues, OnCleanup onCleanup) callback, {
+  void Function(List<T> values, List<T?> oldValues, OnCleanup onCleanup)
+      callback, {
   WatchOptions options = WatchOptions.defaults,
 }) {
   List<T>? oldValues;
@@ -221,7 +222,8 @@ WatchHandle watchMultiple<T>(
       // Check if any value changed
       var hasChanged = false;
       for (var i = 0; i < newValues.length; i++) {
-        if (!identical(newValues[i], oldValues![i]) && newValues[i] != oldValues![i]) {
+        if (!identical(newValues[i], oldValues![i]) &&
+            newValues[i] != oldValues![i]) {
           hasChanged = true;
           break;
         }
@@ -245,4 +247,3 @@ WatchHandle watchMultiple<T>(
 
   return WatchHandle._(effect);
 }
-

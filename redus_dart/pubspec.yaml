@@ -1,6 +1,6 @@
 name: redus
 description: A Vue-like fine-grained reactivity system for Dart with dependency injection. Developer utilities for convenience and performance.
-version: 0.4.1
+version: 0.4.3
 repository: https://github.com/SkyJTx/redus
 homepage: https://github.com/SkyJTx/redus
 issue_tracker: https://github.com/SkyJTx/redus/issues

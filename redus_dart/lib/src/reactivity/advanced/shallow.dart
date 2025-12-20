@@ -93,7 +93,8 @@ void triggerRef(ShallowRef<dynamic> ref) {
 /// // Nested mutation still works
 /// state.value['nested']['bar'] = 3;
 /// ```
-ShallowReadonly<T> shallowReadonly<T>(Object source) => ShallowReadonly<T>(source);
+ShallowReadonly<T> shallowReadonly<T>(Object source) =>
+    ShallowReadonly<T>(source);
 
 /// A shallow readonly wrapper.
 ///
@@ -103,7 +104,9 @@ class ShallowReadonly<T> {
 
   /// Creates a shallow readonly wrapper around the given source.
   ShallowReadonly(this._source) {
-    if (_source is! Ref<T> && _source is! Computed<T> && _source is! ShallowRef<T>) {
+    if (_source is! Ref<T> &&
+        _source is! Computed<T> &&
+        _source is! ShallowRef<T>) {
       throw ArgumentError(
         'ShallowReadonly source must be a Ref<$T>, Computed<$T>, or ShallowRef<$T>, '
         'got ${_source.runtimeType}',

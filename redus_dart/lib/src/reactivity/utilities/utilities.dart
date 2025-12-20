@@ -115,7 +115,10 @@ Map<String, Ref<T>> toRefs<T>(Map<String, T> source) {
 /// isProxy(5);           // false
 /// ```
 bool isProxy(Object? value) {
-  return value is Ref || value is Computed || value is Readonly || value is ShallowRef;
+  return value is Ref ||
+      value is Computed ||
+      value is Readonly ||
+      value is ShallowRef;
 }
 
 /// Check if a value is reactive (Ref, Computed, or ShallowRef).

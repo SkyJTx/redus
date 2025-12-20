@@ -5,14 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.4.1] - 2024-12-19
+## [0.4.3] - 2025-12-20
+
+### Fixed
+
+- Code formatting issues across library and test files
+
+## [0.4.2] - 2025-12-20
+
+### Fixed
+
+- Code formatting issues across library and test files
+
+## [0.4.1] - 2025-12-19
 
 ### Fixed
 
 - Updated README to reflect redus as dev utility package (not just reactivity)
 - Added complete DI module documentation to CHANGELOG and README
 
-## [0.4.0] - 2024-12-19
+## [0.4.0] - 2025-12-19
 
 ### Added
 
@@ -39,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `package:redus/di.dart` - Dependency injection
   - `package:redus/redus.dart` - All modules combined
 
-## [0.3.0] - 2024-12-19
+## [0.3.0] - 2025-12-19
 
 ### Added
 
@@ -58,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Strongly typed `watchMultiple()` API** - Sources are now `List<T Function()>`
 
-## [0.2.0] - 2024-12-19
+## [0.2.0] - 2025-12-19
 
 ### Added
 
@@ -71,7 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed `@internal` annotations from `activeEffect` and `effectStack`
 
-## [0.1.0] - 2024-12-18
+## [0.1.0] - 2025-12-18
 
 ### Added
 
