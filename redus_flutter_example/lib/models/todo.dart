@@ -4,17 +4,9 @@ class Todo {
   final String text;
   final bool isCompleted;
 
-  Todo({
-    required this.id,
-    required this.text,
-    this.isCompleted = false,
-  });
+  Todo({required this.id, required this.text, this.isCompleted = false});
 
-  Todo copyWith({
-    String? id,
-    String? text,
-    bool? isCompleted,
-  }) {
+  Todo copyWith({String? id, String? text, bool? isCompleted}) {
     return Todo(
       id: id ?? this.id,
       text: text ?? this.text,
@@ -27,8 +19,4 @@ class Todo {
 }
 
 /// Filter options for the todo list
-enum TodoFilter {
-  all,
-  active,
-  completed,
-}
+enum TodoFilter { all, active, completed }

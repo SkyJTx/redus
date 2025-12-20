@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:redus_flutter/redus_flutter.dart';
 import '../models/todo.dart';
 
-class TodoItem extends Component {
+class TodoItem extends ReactiveWidget {
   final Todo todo;
   final VoidCallback onToggle;
   final VoidCallback onDelete;
@@ -16,24 +16,13 @@ class TodoItem extends Component {
 
   @override
   void setup() {
-    // No local state needed for this component, 
-    // it's a pure UI component driven by props.
-    // 
-    // However, we can use onMounted to demonstrate lifecycle on list items
-    /*
-    onMounted(() {
-      print('Item mounted: ${todo.text}');
-    });
-    */
+    // No local state needed - pure UI component driven by props
   }
 
   @override
   Widget render(BuildContext context) {
     return ListTile(
-      leading: Checkbox(
-        value: todo.isCompleted,
-        onChanged: (_) => onToggle(),
-      ),
+      leading: Checkbox(value: todo.isCompleted, onChanged: (_) => onToggle()),
       title: Text(
         todo.text,
         style: TextStyle(

@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2024-12-19
+
+### Fixed
+
+- Updated README to reflect redus as dev utility package (not just reactivity)
+- Added complete DI module documentation to CHANGELOG and README
+
+## [0.4.0] - 2024-12-19
+
+### Added
+
+- **Dependency Injection Module** (`package:redus/di.dart`)
+  - `register<T>(instance, {key})` - Register singleton with optional key
+  - `registerFactory<T>(factory, {key})` - Register factory with optional key
+  - `get<T>({key})` - Get registered instance by type and optional key
+  - `isRegistered<T>({key})` - Check if type/key is registered
+  - `unregister<T>({key})` - Remove registration
+  - `resetLocator()` - Clear all registrations
+
+- **Key-based Lookup** - Register multiple instances of same type with different keys
+
+  ```dart
+  register<Logger>(ConsoleLogger(), key: #console);
+  register<Logger>(FileLogger(), key: #file);
+  final log = get<Logger>(key: #console);
+  ```
+
+### Changed
+
+- **Package Scope Expanded** - Redus is now a dev utility package with multiple modules:
+  - `package:redus/reactivity.dart` - Fine-grained reactivity system
+  - `package:redus/di.dart` - Dependency injection
+  - `package:redus/redus.dart` - All modules combined
+
 ## [0.3.0] - 2024-12-19
 
 ### Added

@@ -1,43 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:redus_flutter/redus_flutter.dart';
 
-class TodoInput extends Component {
-  final Function(String) onSubmit;
+/// Store for TodoInput local state, bound via bind()
+class _TodoInputStore {
+  final controller = TextEditingController();
+  final inputValue = ref('');
 
-  TodoInput({
-    super.key, 
-    required this.onSubmit,
-  });
+  late final isValid = computed(() => inputValue.value.trim().isNotEmpty);
 
-  late final TextEditingController controller;
-  late final Ref<String> inputValue;
-  late final Computed<bool> isValid;
-
-  @override
-  void setup() {
-    controller = TextEditingController();
-    
-    // Local reactive state
-    inputValue = ref('');
-    
-    // Derived state: validation
-    isValid = computed(() => inputValue.value.trim().isNotEmpty);
-
+  _TodoInputStore() {
     // Sync controller with ref
     controller.addListener(() {
       inputValue.value = controller.text;
     });
+  }
 
+  void dispose() {
+    controller.dispose();
+  }
+}
+
+class TodoInput extends ReactiveWidget {
+  final Function(String) onSubmit;
+
+  TodoInput({super.key, required this.onSubmit});
+
+  // State stored on Element via bind() - persists across parent rebuilds
+  late final store = bind(() => _TodoInputStore());
+
+  @override
+  void setup() {
     onUnmounted(() {
-      controller.dispose();
+      store.dispose();
     });
   }
-  
+
   void _submit() {
-    if (isValid.value) {
-      onSubmit(inputValue.value);
-      controller.clear();
-      // Ref updates automatically via listener
+    if (store.isValid.value) {
+      onSubmit(store.inputValue.value);
+      store.controller.clear();
     }
   }
 
@@ -49,7 +50,7 @@ class TodoInput extends Component {
         children: [
           Expanded(
             child: TextField(
-              controller: controller,
+              controller: store.controller,
               decoration: const InputDecoration(
                 hintText: 'What needs to be done?',
                 border: OutlineInputBorder(),
@@ -58,9 +59,13 @@ class TodoInput extends Component {
             ),
           ),
           const SizedBox(width: 8),
-          IconButton.filled(
-            onPressed: isValid.value ? _submit : null,
-            icon: const Icon(Icons.add),
+          // Using Observe to watch isValid and update button state
+          Observe<bool>(
+            source: store.isValid.call,
+            builder: (context, isValid) => IconButton.filled(
+              onPressed: isValid ? _submit : null,
+              icon: const Icon(Icons.add),
+            ),
           ),
         ],
       ),

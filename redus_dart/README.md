@@ -1,123 +1,119 @@
 # Redus
 
-A Vue-like **fine-grained reactivity system** for Dart, designed for developer convenience and performance.
+**Developer utilities for Dart** - Fine-grained reactivity, dependency injection, and more.
 
 [![Dart](https://img.shields.io/badge/Dart-3.0+-blue.svg)](https://dart.dev)
+[![pub package](https://img.shields.io/pub/v/redus.svg)](https://pub.dev/packages/redus)
 
-## Features
+## Modules
 
-- 🎯 **Fine-grained reactivity** - Only update what changed
-- 🚀 **Lazy computed values** - Cached and recomputed only when dependencies change
-- ⚡ **Efficient batching** - Multiple changes batched into single updates
-- 🧹 **Automatic cleanup** - Cleanup callbacks for effects
-- 🎮 **Full control** - Stop, pause, and resume watchers
-- 🔬 **Effect scoping** - Group and dispose effects together
+| Module | Import | Description |
+|--------|--------|-------------|
+| **Reactivity** | `package:redus/reactivity.dart` | Vue-like fine-grained reactivity |
+| **DI** | `package:redus/di.dart` | Dependency injection with key support |
+| **All** | `package:redus/redus.dart` | All modules combined |
 
 ## Installation
 
-Add to your `pubspec.yaml`:
-
 ```yaml
 dependencies:
-  redus: ^0.1.0
+  redus: ^0.4.0
 ```
 
-## Module Structure
+---
 
-The package is organized into three modules:
+## Dependency Injection
+
+Simple service locator with type-based and key-based lookup.
 
 ```dart
-import 'package:redus/reactivity.dart'; // All APIs
+import 'package:redus/di.dart';
 
-// Or import specific modules:
-// Core: ref, computed, readonly, watchEffect, watch
-// Utilities: isRef, unref, toRef, toValue, toRefs, isProxy, isReactive, isReadonly
-// Advanced: shallowRef, customRef, effectScope, toRaw, markRaw
+// Register by type
+register<ApiService>(ApiService());
+final api = get<ApiService>();
+
+// Register multiple instances with keys
+register<Logger>(ConsoleLogger(), key: #console);
+register<Logger>(FileLogger(), key: #file);
+final log = get<Logger>(key: #console);
+
+// Factory registration
+registerFactory<DatabaseConnection>(() => DatabaseConnection());
 ```
 
-## Quick Start
+### DI API
+
+| API | Description |
+|-----|-------------|
+| `register<T>(instance, {key})` | Register singleton |
+| `registerFactory<T>(factory, {key})` | Register factory |
+| `get<T>({key})` | Get instance |
+| `isRegistered<T>({key})` | Check registration |
+| `unregister<T>({key})` | Remove registration |
+| `resetLocator()` | Clear all |
+
+---
+
+## Reactivity
+
+Vue-like fine-grained reactivity with automatic dependency tracking.
 
 ```dart
 import 'package:redus/reactivity.dart';
 
-void main() {
-  // Create reactive values
-  final count = ref(0);
-  final doubled = computed(() => count.value * 2);
+final count = ref(0);
+final doubled = computed(() => count.value * 2);
 
-  // React to changes
-  watchEffect((_) {
-    print('Count: ${count.value}, Doubled: ${doubled.value}');
-  });
-  // Prints: "Count: 0, Doubled: 0"
+watchEffect((_) {
+  print('Count: ${count.value}, Doubled: ${doubled.value}');
+});
 
-  count.value = 5;
-  // Prints: "Count: 5, Doubled: 10"
-}
+count.value = 5;  // Prints: "Count: 5, Doubled: 10"
 ```
 
-## API Reference
-
-### Core
+### Core API
 
 | API | Description |
 |-----|-------------|
-| `ref<T>(value)` | Create mutable reactive reference |
-| `computed<T>(getter)` | Create readonly computed value |
-| `writableComputed<T>(get, set)` | Create writable computed value |
-| `readonly<T>(source)` | Create readonly reactive wrapper |
-| `watchEffect(effect)` | Run effect immediately, re-run on change |
-| `watchPostEffect(effect)` | watchEffect with post-flush timing |
-| `watchSyncEffect(effect)` | watchEffect with sync timing |
-| `watch(source, callback)` | Watch sources with old/new values |
-| `watchMultiple(sources, callback)` | Watch multiple sources |
-| `onWatcherCleanup(fn)` | Register cleanup for current watcher |
+| `ref<T>(value)` | Mutable reactive reference |
+| `computed<T>(getter)` | Cached computed value |
+| `readonly<T>(source)` | Readonly wrapper |
+| `watchEffect(effect)` | Auto-tracking effect |
+| `watch(source, callback)` | Explicit source watching |
 
 ### Utilities
 
 | API | Description |
 |-----|-------------|
-| `isRef(value)` | Check if value is a Ref |
+| `isRef(value)` | Check if Ref |
 | `unref<T>(maybeRef)` | Unwrap ref or return value |
-| `toRef<T>(source)` | Normalize value/getter to ref |
-| `toValue<T>(source)` | Normalize ref/getter to value |
-| `toRefs<T>(map)` | Convert map to refs |
-| `isProxy(value)` | Check if reactive proxy |
-| `isReactive(value)` | Check if reactive |
-| `isReadonly(value)` | Check if readonly |
+| `toRef<T>(source)` | Normalize to ref |
+| `toValue<T>(source)` | Normalize to value |
 
 ### Advanced
 
 | API | Description |
 |-----|-------------|
 | `shallowRef<T>(value)` | Shallow reactive ref |
-| `triggerRef(ref)` | Force trigger shallow ref |
-| `shallowReadonly<T>(source)` | Shallow readonly wrapper |
 | `customRef<T>(factory)` | Custom ref with track/trigger |
-| `toRaw<T>(value)` | Get underlying value |
-| `markRaw<T>(value)` | Prevent reactivity |
 | `effectScope()` | Group effects for disposal |
-| `getCurrentScope()` | Get active effect scope |
-| `onScopeDispose(fn)` | Register scope cleanup |
+| `markRaw<T>(value)` | Prevent reactivity |
+
+---
 
 ## Examples
 
-### Custom Debounced Ref
+### Debounced Ref
 
 ```dart
-Ref<T> useDebouncedRef<T>(T value, {Duration delay = Duration(milliseconds: 200)}) {
+Ref<T> useDebouncedRef<T>(T value, {Duration delay = const Duration(milliseconds: 200)}) {
   Timer? timeout;
   return customRef((track, trigger) => (
-    get: () {
-      track();
-      return value;
-    },
+    get: () { track(); return value; },
     set: (newValue) {
       timeout?.cancel();
-      timeout = Timer(delay, () {
-        value = newValue;
-        trigger();
-      });
+      timeout = Timer(delay, () { value = newValue; trigger(); });
     },
   ));
 }
@@ -130,32 +126,14 @@ final scope = effectScope();
 
 scope.run(() {
   final doubled = computed(() => count.value * 2);
-  
-  watchEffect((_) {
-    print('Count: ${doubled.value}');
-  });
-  
-  onScopeDispose(() {
-    print('Scope disposed!');
-  });
+  watchEffect((_) => print('Doubled: ${doubled.value}'));
 });
 
-// Dispose all effects at once
-scope.stop();
+scope.stop();  // Dispose all effects
 ```
 
-### Shallow Ref for Large Objects
-
-```dart
-final largeData = shallowRef(loadLargeDataset());
-
-// Nested mutations don't trigger (performance optimization)
-largeData.value['items'][0] = newItem;
-
-// Force trigger when needed
-triggerRef(largeData);
-```
+---
 
 ## License
 
-MIT License - see LICENSE file for details.
+MIT License

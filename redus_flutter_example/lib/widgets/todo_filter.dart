@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:redus_flutter/redus_flutter.dart';
 import '../models/todo.dart';
 
-class TodoFilterWidget extends Component {
+class TodoFilterWidget extends ReactiveWidget {
   final TodoFilter currentFilter;
   final Function(TodoFilter) onFilterChanged;
 
@@ -14,7 +14,7 @@ class TodoFilterWidget extends Component {
 
   @override
   void setup() {
-    // Stateless setup
+    // Stateless - no local state needed
   }
 
   @override
@@ -23,18 +23,9 @@ class TodoFilterWidget extends Component {
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: SegmentedButton<TodoFilter>(
         segments: const [
-          ButtonSegment(
-            value: TodoFilter.all,
-            label: Text('All'),
-          ),
-          ButtonSegment(
-            value: TodoFilter.active,
-            label: Text('Active'),
-          ),
-          ButtonSegment(
-            value: TodoFilter.completed,
-            label: Text('Completed'),
-          ),
+          ButtonSegment(value: TodoFilter.all, label: Text('All')),
+          ButtonSegment(value: TodoFilter.active, label: Text('Active')),
+          ButtonSegment(value: TodoFilter.completed, label: Text('Completed')),
         ],
         selected: {currentFilter},
         onSelectionChanged: (Set<TodoFilter> newSelection) {

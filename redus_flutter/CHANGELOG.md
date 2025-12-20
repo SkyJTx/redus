@@ -5,53 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] - 2024-12-19
+## [0.5.0] - 2025-12-20
+
+### Added
+
+- **`Observe<T>` widget** - Watches a reactive source and rebuilds when it changes
+  - Takes a `source` function (Ref, Computed, or getter)
+  - Similar to `watch()` but as a widget
+  - Only rebuilds when source value changes
+
+- **`ObserveMultiple<T>` widget** - Watches multiple sources
+  - Takes list of `sources`
+  - Rebuilds when any source changes
+
+- **`ObserveEffect` widget** - Auto-tracks reactive dependencies
+  - Similar to `watchEffect()` but as a widget
+  - Tracks any `.value` access in builder
+  - Most fine-grained reactivity option
+
+### Changed
+
+- **Folder restructure**: Renamed `component/` to `widget/`
+- **File split**: Split into individual files:
+  - `reactive_widget.dart` - ReactiveWidget + ReactiveElement
+  - `observe.dart` - Observe + ObserveMultiple widgets
+  - `observe_effect.dart` - ObserveEffect widget
+  - `lifecycle.dart` - Lifecycle hooks mixin
+
+## [0.4.0] - 2025-12-20
+
+### Added
+
+- **`bind<T>()` API** - New simpler way to bind state to Element
+  - `late final store = bind(() => MyStore())` - Bind stores or any value
+  - Index-based storage - no Symbol keys needed
+  - State persists across parent widget rebuilds
+  - Supports store pattern for encapsulated business logic
+
+### Removed
+
+- **`state()` and `getState()` methods** - Replaced by `bind()`
+
+## [0.3.1] - 2025-12-19
+
+### Fixed
+
+- Updated README with new `ReactiveWidget` API and `.watch(context)` documentation
+
+## [0.3.0] - 2025-12-19
+
+### Added
+
+- **ReactiveWidget** - New single-class component design
+- **.watch(context) Extension** - Fine-grained reactivity for any widget
+- **DI Moved to redus_dart** - Dependency injection from `package:redus/di.dart`
+
+## [0.2.0] - 2025-12-19
 
 ### Changed
 
 - **Automatic Reactivity** - `render()` now automatically tracks reactive dependencies
-  - No more manual `watchEffect` + `rebuild()` needed in `setup()`
-  - Accessing `Ref.value` or `Computed.value` in `render()` auto-triggers rebuilds when they change
-  - Similar to Vue's template reactivity
 
-- **Removed `rebuild()` method** - No longer needed with automatic tracking
-
-### Dependencies
-
-- Updated to `redus: ^0.3.0` with callable `Ref` and `Computed`
-  - `count()` is now equivalent to `count.value`
-  - Strongly typed `watch()` API with proper type inference
-
-## [0.1.0] - 2024-12-18
+## [0.1.0] - 2025-12-18
 
 ### Added
 
-- **Component Base Class** (`src/component/`)
-  - Vue-like `Component` extending `StatefulWidget`
-  - `setup()` method for reactive state initialization
-  - `render()` method replacing `build()`
-  - `rebuild()` method to trigger component update
-
-- **Lifecycle Hooks** (`src/component/lifecycle.dart`)
-  - `onBeforeMount` - Before first build
-  - `onMounted` - After first build
-  - `onBeforeUpdate` - Before rebuild
-  - `onUpdated` - After rebuild
-  - `onBeforeUnmount` - Before dispose
-  - `onUnmounted` - After dispose
-  - `onErrorCaptured` - Error boundary
-  - `onActivated` / `onDeactivated` - Route visibility
-  - `onRenderTracked` / `onRenderTriggered` - Debug hooks
-
-- **Dependency Injection** (`src/di/service_locator.dart`)
-  - `register<T>()` - Register singleton
-  - `registerFactory<T>()` - Register factory
-  - `get<T>()` - Get instance
-  - `isRegistered<T>()` - Check registration
-  - `unregister<T>()` - Remove registration
-  - `resetServiceLocator()` - Clear all
-
-### Dependencies
-
-- Built on `redus` reactivity system
-- Re-exports all `redus` APIs for convenience
+- Initial release with Component, Lifecycle Hooks, and DI

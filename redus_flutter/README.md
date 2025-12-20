@@ -1,134 +1,154 @@
 # Redus Flutter
 
-Vue-like **Component system** for Flutter with reactive state and lifecycle hooks.
+Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle hooks, and dependency injection.
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.0+-blue.svg)](https://flutter.dev)
+[![pub package](https://img.shields.io/pub/v/redus_flutter.svg)](https://pub.dev/packages/redus_flutter)
 
 ## Features
 
-- 🎯 **Vue-like Components** - Familiar setup/render pattern
+- 🎯 **ReactiveWidget** - Single-class component with state on Element
+- 👁️ **Observe** - Widget that watches a source and rebuilds
+- ⚡ **ObserveEffect** - Widget that auto-tracks dependencies
 - 🔄 **Lifecycle Hooks** - onMounted, onUpdated, onUnmounted, etc.
-- ⚡ **Reactive State** - Built on redus reactivity system
-- 💉 **Dependency Injection** - Simple global service locator
+- 💉 **Dependency Injection** - Type + key-based lookup (from `redus`)
 - 🧹 **Auto Cleanup** - Effect scopes tied to widget lifecycle
 
 ## Installation
 
 ```yaml
 dependencies:
-  redus_flutter:
-    path: ../redus_flutter  # or pub.dev when published
+  redus_flutter: ^0.5.0
 ```
 
 ## Quick Start
 
+### ReactiveWidget with `bind()`
+
 ```dart
 import 'package:redus_flutter/redus_flutter.dart';
 
-class CounterComponent extends Component {
-  late final Ref<int> count;
+class CounterStore {
+  final count = ref(0);
+  void increment() => count.value++;
+}
+
+class Counter extends ReactiveWidget {
+  late final store = bind(() => CounterStore());
 
   @override
   void setup() {
-    count = ref(0);
-
-    onMounted(() => print('Mounted!'));
-    onUnmounted(() => print('Unmounted!'));
-
-    // Set up reactive rebuilding
-    watchEffect((_) {
-      count.value;
-      rebuild();
-    });
+    onMounted(() => print('Count: ${store.count.value}'));
   }
 
   @override
   Widget render(BuildContext context) {
     return ElevatedButton(
-      onPressed: () => count.value++,
-      child: Text('Count: ${count.value}'),
+      onPressed: store.increment,
+      child: Text('Count: ${store.count.value}'),
     );
   }
 }
+```
 
-// Usage
-CounterComponent()
+### Observe Widget
+
+`Observe` watches a reactive source (like `watch()`) and rebuilds when it changes:
+
+```dart
+final count = ref(0);
+
+// Watch a Ref directly
+Observe<int>(
+  source: count,
+  builder: (context, value) => Text('Count: $value'),
+)
+
+// Watch a derived value
+Observe<int>(
+  source: () => count.value * 2,
+  builder: (context, doubled) => Text('Doubled: $doubled'),
+)
+
+// Watch multiple sources
+ObserveMultiple<String>(
+  sources: [firstName, lastName],
+  builder: (context, values) => Text('${values[0]} ${values[1]}'),
+)
+```
+
+### ObserveEffect Widget
+
+`ObserveEffect` auto-tracks any reactive values (like `watchEffect()`):
+
+```dart
+final count = ref(0);
+final name = ref('Alice');
+
+// Auto-tracks all .value accesses
+ObserveEffect(
+  builder: (context) => Column(
+    children: [
+      Text('Count: ${count.value}'),
+      Text('Name: ${name.value}'),
+    ],
+  ),
+)
+```
+
+### Fine-Grained `.watch(context)`
+
+Use `.watch(context)` in any widget for automatic rebuilds:
+
+```dart
+class MyStatelessWidget extends StatelessWidget {
+  final Ref<int> count;
+  
+  @override
+  Widget build(BuildContext context) {
+    // Only THIS widget rebuilds when count changes
+    return Text('Count: ${count.watch(context)}');
+  }
+}
 ```
 
 ## Lifecycle Hooks
 
-| Hook | Flutter Equivalent | Description |
-|------|-------------------|-------------|
-| `onBeforeMount` | Before first build | Setup complete, before render |
-| `onMounted` | After first build | Widget fully rendered |
-| `onBeforeUpdate` | `didUpdateWidget` | Before rebuild |
-| `onUpdated` | After rebuild | Rebuild complete |
-| `onBeforeUnmount` | `dispose` start | Cleanup starting |
-| `onUnmounted` | After `dispose` | Widget removed |
-| `onErrorCaptured` | Error boundary | Catch render errors |
-| `onActivated` | Route visible | Widget activated |
-| `onDeactivated` | Route hidden | Widget deactivated |
+| Hook | When |
+|------|------|
+| `onMounted` | After first build |
+| `onUpdated` | After rebuild |
+| `onUnmounted` | After dispose |
+| `onBeforeMount` | Before first build |
+| `onBeforeUpdate` | Before rebuild |
+| `onBeforeUnmount` | Before dispose |
+| `onErrorCaptured` | Error boundary |
+| `onActivated` | Widget activated |
+| `onDeactivated` | Widget deactivated |
 
 ## Dependency Injection
 
+DI comes from `redus` package with key support:
+
 ```dart
-// Register singleton
+// By type
 register<ApiService>(ApiService());
-
-// Register factory (new instance each time)
-registerFactory<Logger>(() => Logger());
-
-// Get instance
 final api = get<ApiService>();
 
-// Check registration
-if (isRegistered<ApiService>()) { ... }
-
-// Remove registration
-unregister<ApiService>();
+// By key (multiple instances)
+register<Logger>(ConsoleLogger(), key: #console);
+register<Logger>(FileLogger(), key: #file);
+final log = get<Logger>(key: #console);
 ```
 
-## Full Example
+## When to Use What
 
-```dart
-import 'package:flutter/material.dart';
-import 'package:redus_flutter/redus_flutter.dart';
-
-void main() {
-  // Setup DI
-  register<ApiService>(ApiService());
-
-  runApp(MaterialApp(home: TodoComponent()));
-}
-
-class TodoComponent extends Component {
-  late final Ref<List<String>> todos;
-  late final ApiService api;
-
-  @override
-  void setup() {
-    todos = ref<List<String>>([]);
-    api = get<ApiService>();
-
-    onMounted(() async {
-      todos.value = await api.fetchTodos();
-    });
-
-    // Rebuild when todos change
-    watchEffect((_) {
-      todos.value;
-      rebuild();
-    });
-  }
-
-  @override
-  Widget render(BuildContext context) {
-    return ListView(
-      children: todos.value.map((t) => ListTile(title: Text(t))).toList(),
-    );
-  }
-}
-```
+| Widget | Use When |
+|--------|----------|
+| `ReactiveWidget` | Full component with lifecycle, stores |
+| `Observe<T>` | Watch specific source(s), explicit dependency |
+| `ObserveEffect` | Auto-track multiple dependencies |
+| `.watch(context)` | Simple inline reactive values |
 
 ## License
 

@@ -5,23 +5,20 @@ import '../widgets/todo_item.dart';
 import '../widgets/todo_input.dart';
 import '../widgets/todo_filter.dart';
 
-class TodoScreen extends Component {
+class TodoScreen extends ReactiveWidget {
   TodoScreen({super.key});
 
-  late final TodoStore store;
+  // Store bound to Element - persists across parent rebuilds
+  late final store = bind(() => get<TodoStore>());
 
   @override
   void setup() {
-    // Inject store
-    store = get<TodoStore>();
-
     // Load initial data
     onMounted(() {
       store.loadTodos();
     });
 
     // Side effect: Log changes (demonstrating watch)
-    // Using getter function syntax for explicit type inference
     watch(() => store.todos.value, (todos, prevTodos, _) {
       if (prevTodos != null) {
         final diff = todos.length - prevTodos.length;
@@ -38,69 +35,102 @@ class TodoScreen extends Component {
 
   @override
   Widget render(BuildContext context) {
-    if (store.isLoading.value) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
+    // Using Observe to watch isLoading state
+    return Observe<bool>(
+      source: store.isLoading.call,
+      builder: (context, isLoading) {
+        if (isLoading) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Redus Todo'),
-        actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: Text(
-                '${store.activeCount.value} active',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Filter
-          TodoFilterWidget(currentFilter: store.filter.value, onFilterChanged: store.setFilter),
-
-          // Input
-          TodoInput(onSubmit: store.addTodo),
-
-          const Divider(),
-
-          // List
-          Expanded(
-            child: store.filteredTodos.value.isEmpty
-                ? Center(
-                    child: Text(
-                      'No todos found',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Redus Todo'),
+            actions: [
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 16.0),
+                  // Using Observe to watch activeCount
+                  child: Observe<int>(
+                    source: store.activeCount.call,
+                    builder: (context, count) => Text(
+                      '$count active',
+                      style: Theme.of(context).textTheme.titleSmall,
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: store.filteredTodos.value.length,
-                    itemBuilder: (context, index) {
-                      final todo = store.filteredTodos.value[index];
-                      return TodoItem(
-                        // Key is important for correct list updates in Flutter
-                        key: ValueKey(todo.id),
-                        todo: todo,
-                        onToggle: () => store.toggleTodo(todo.id),
-                        onDelete: () => store.removeTodo(todo.id),
-                      );
-                    },
                   ),
-          ),
-
-          if (store.hasCompleted.value)
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: TextButton(
-                onPressed: store.clearCompleted,
-                child: const Text('Clear Completed'),
+                ),
               ),
-            ),
-        ],
-      ),
+            ],
+          ),
+          body: Column(
+            children: [
+              // Filter - uses ObserveEffect to auto-track filter changes
+              ObserveEffect(
+                builder: (context) => TodoFilterWidget(
+                  currentFilter: store.filter.value,
+                  onFilterChanged: store.setFilter,
+                ),
+              ),
+
+              // Input
+              TodoInput(onSubmit: store.addTodo),
+
+              const Divider(),
+
+              // List - uses ObserveEffect to auto-track filteredTodos
+              Expanded(
+                child: ObserveEffect(
+                  builder: (context) {
+                    final todos = store.filteredTodos.value;
+
+                    if (todos.isEmpty) {
+                      return Center(
+                        child: Text(
+                          'No todos found',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      itemCount: todos.length,
+                      itemBuilder: (context, index) {
+                        final todo = todos[index];
+                        return TodoItem(
+                          key: ValueKey(todo.id),
+                          todo: todo,
+                          onToggle: () => store.toggleTodo(todo.id),
+                          onDelete: () => store.removeTodo(todo.id),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+
+              // Clear completed button - uses Observe to watch hasCompleted
+              Observe<bool>(
+                source: store.hasCompleted.call,
+                builder: (context, hasCompleted) {
+                  if (!hasCompleted) return const SizedBox.shrink();
+
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextButton(
+                      onPressed: store.clearCompleted,
+                      child: const Text('Clear Completed'),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
