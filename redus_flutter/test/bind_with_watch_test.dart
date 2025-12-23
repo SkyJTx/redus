@@ -1,14 +1,15 @@
-/// Tests for bind() with watch() in setup() using multiple Ref types.
-///
-/// Verifies that bind() correctly manages indices when fields are accessed
-/// in different phases (setup vs render) with different types.
+// Tests for bind() with watch() in setup() using multiple Ref types.
+//
+// Verifies that bind() correctly manages indices when fields are accessed
+// in different phases (setup vs render) with different types.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:redus_flutter/redus_flutter.dart';
 
 void main() {
   group('bind() with watch() in setup', () {
-    testWidgets('should handle multiple Ref types accessed in different phases', (tester) async {
+    testWidgets('should handle multiple Ref types accessed in different phases',
+        (tester) async {
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(body: _WatchWithMultipleRefs()),
       ));
@@ -20,7 +21,8 @@ void main() {
       expect(find.text('Query: '), findsOneWidget);
     });
 
-    testWidgets('watch should trigger callback when Ref value changes', (tester) async {
+    testWidgets('watch should trigger callback when Ref value changes',
+        (tester) async {
       await tester.pumpWidget(MaterialApp(
         home: Scaffold(body: _WatchWithMultipleRefs()),
       ));
@@ -38,8 +40,8 @@ void main() {
   });
 }
 
-/// Test widget: uses watch() in setup() with Ref<String>,
-/// then accesses Ref<List<String>> in render().
+// Test widget: uses watch() in setup() with Ref<String>,
+// then accesses Ref<List<String>> in render().
 class _WatchWithMultipleRefs extends ReactiveWidget {
   _WatchWithMultipleRefs();
 

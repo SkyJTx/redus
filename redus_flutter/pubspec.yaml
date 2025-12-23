@@ -1,6 +1,6 @@
 name: redus_flutter
 description: Vue-like Component system for Flutter with reactive state, lifecycle hooks, and dependency injection.
-version: 0.5.0
+version: 0.5.1
 repository: https://github.com/SkyJTx/redus
 homepage: https://github.com/SkyJTx/redus/tree/main/redus_flutter
 issue_tracker: https://github.com/SkyJTx/redus/issues

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2025-12-23
+
+### Fixed
+
+- **bind() type mismatch bug** - Fixed `TypeError` when using `bind()` with multiple `Ref` types and `watch()` in `setup()`. The issue occurred when fields were accessed in different phases (setup vs render), causing incorrect index assignment. Now correctly tracks widget instances to reset indices only on widget recreation.
+
 ## [0.5.0] - 2025-12-20
 
 ### Added

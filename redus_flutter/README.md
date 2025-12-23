@@ -18,7 +18,7 @@ Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle 
 
 ```yaml
 dependencies:
-  redus_flutter: ^0.5.0
+  redus_flutter: ^0.5.1
 ```
 
 ## Quick Start
