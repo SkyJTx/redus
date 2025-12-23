@@ -24,7 +24,7 @@ void main() {
 
       final component = _TestComponent(
         onSetup: () {},
-        onMountedCallback: () => mountedCalled = true,
+        onMountedCallback: (context) => mountedCalled = true,
         builder: (_) => const Text('Hello'),
       );
 
@@ -38,7 +38,7 @@ void main() {
 
       final component = _TestComponent(
         onSetup: () {},
-        onUnmountedCallback: () => unmountedCalled = true,
+        onUnmountedCallback: (context) => unmountedCalled = true,
         builder: (_) => const Text('Hello'),
       );
 
@@ -518,8 +518,8 @@ class _BindTestComponent extends ReactiveWidget {
 /// Test component for unit testing using new ReactiveWidget API
 class _TestComponent extends ReactiveWidget {
   final void Function() onSetup;
-  final void Function()? onMountedCallback;
-  final void Function()? onUnmountedCallback;
+  final void Function(BuildContext)? onMountedCallback;
+  final void Function(BuildContext)? onUnmountedCallback;
   final Widget Function(BuildContext) builder;
 
   _TestComponent({

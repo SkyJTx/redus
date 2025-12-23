@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2025-12-23
+
+### Changed (BREAKING)
+
+- **Lifecycle hooks now receive `BuildContext`** - All lifecycle callbacks (`onMounted`, `onUpdated`, `onUnmounted`, etc.) now receive `BuildContext` as a parameter, enabling access to InheritedWidgets like `Theme`, `MediaQuery`, and `Navigator`.
+
+  **Migration:**
+
+  ```dart
+  // Before
+  onMounted(() => print('Mounted!'));
+  
+  // After
+  onMounted((context) => print('Mounted!'));
+  // Or if context not needed:
+  onMounted((_) => print('Mounted!'));
+  ```
+
+### Added
+
+- **Context access in lifecycle hooks** - Developers can now access Flutter's InheritedWidget system directly:
+
+  ```dart
+  onMounted((context) {
+    final theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
+  });
+  
+  onDependenciesChanged((context) {
+    // React to theme/locale/media changes
+    final brightness = Theme.of(context).brightness;
+  });
+  ```
+
+---
+
 ## [0.6.0] - 2025-12-23
 
 ### Added
@@ -24,6 +60,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Provides `bind()` and lifecycle hooks
   - No automatic reactivity in `build()` (use `Observe`/`ObserveEffect`)
   - Simpler mental model with explicit reactivity control
+
+- **`onDependenciesChanged`** - Lifecycle hook for InheritedWidget changes
+  - Called when MediaQuery, Theme, Locale, etc. change
+  - Triggered before processing the change
+  
+- **`onAfterDependenciesChanged`** - Lifecycle hook after dependency processing
+  - Called after processing InheritedWidget changes
 
 ### Changed
 

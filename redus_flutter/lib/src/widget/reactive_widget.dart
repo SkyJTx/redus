@@ -93,6 +93,7 @@ class ReactiveElement extends BindableElement {
   late ReactiveEffect _renderEffect;
   bool _isFirstBuild = true;
   bool _isRendering = false;
+  bool _dependenciesInitialized = false;
   Object? _error;
 
   /// Creates a ReactiveElement for the given ReactiveWidget.
@@ -100,6 +101,24 @@ class ReactiveElement extends BindableElement {
 
   /// The associated ReactiveWidget.
   ReactiveWidget get reactiveWidget => widget as ReactiveWidget;
+
+  @override
+  void didChangeDependencies() {
+    // Skip first call (during mount) - use onMounted for initial setup
+    if (!_dependenciesInitialized) {
+      _dependenciesInitialized = true;
+      super.didChangeDependencies();
+      return;
+    }
+
+    // Run before hook
+    reactiveWidget.runDependenciesChanged(this);
+
+    super.didChangeDependencies();
+
+    // Run after hook
+    reactiveWidget.runAfterDependenciesChanged(this);
+  }
 
   @override
   void mount(Element? parent, Object? newSlot) {
@@ -134,7 +153,7 @@ class ReactiveElement extends BindableElement {
     });
 
     // Before mount hook
-    reactiveWidget.runBeforeMount();
+    reactiveWidget.runBeforeMount(this);
 
     super.mount(parent, newSlot);
   }
@@ -185,13 +204,13 @@ class ReactiveElement extends BindableElement {
       _isFirstBuild = false;
       SchedulerBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          reactiveWidget.runMounted();
+          reactiveWidget.runMounted(this);
         }
       });
     } else {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          reactiveWidget.runUpdated();
+          reactiveWidget.runUpdated(this);
         }
       });
     }
@@ -209,7 +228,7 @@ class ReactiveElement extends BindableElement {
   @override
   void update(covariant ReactiveWidget newWidget) {
     // Before update hook (on old widget)
-    reactiveWidget.runBeforeUpdate();
+    reactiveWidget.runBeforeUpdate(this);
 
     // Clear old widget's expando reference
     bindExpando[reactiveWidget] = null;
@@ -227,21 +246,21 @@ class ReactiveElement extends BindableElement {
   void activate() {
     super.activate();
     bindExpando[reactiveWidget] = this;
-    reactiveWidget.runActivated();
+    reactiveWidget.runActivated(this);
   }
 
   @override
   void deactivate() {
-    reactiveWidget.runDeactivated();
+    reactiveWidget.runDeactivated(this);
     super.deactivate();
   }
 
   @override
   void unmount() {
-    reactiveWidget.runBeforeUnmount();
+    reactiveWidget.runBeforeUnmount(this);
     _renderEffect.stop();
     _scope.stop();
-    reactiveWidget.runUnmounted();
+    reactiveWidget.runUnmounted(this);
     // Clear callbacks to prevent accumulation if widget instance is reused
     reactiveWidget.clearLifecycleCallbacks();
     bindExpando[reactiveWidget] = null;

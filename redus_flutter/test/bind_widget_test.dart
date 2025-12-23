@@ -176,12 +176,12 @@ class _LifecycleTestWidget extends BindWidget {
   @override
   void setup() {
     logs.add('setup');
-    onBeforeMount(() => logs.add('beforeMount'));
-    onMounted(() => logs.add('mounted'));
-    onBeforeUpdate(() => logs.add('beforeUpdate'));
-    onUpdated(() => logs.add('updated'));
-    onBeforeUnmount(() => logs.add('beforeUnmount'));
-    onUnmounted(() => logs.add('unmounted'));
+    onBeforeMount((_) => logs.add('beforeMount'));
+    onMounted((_) => logs.add('mounted'));
+    onBeforeUpdate((_) => logs.add('beforeUpdate'));
+    onUpdated((_) => logs.add('updated'));
+    onBeforeUnmount((_) => logs.add('beforeUnmount'));
+    onUnmounted((_) => logs.add('unmounted'));
   }
 
   @override

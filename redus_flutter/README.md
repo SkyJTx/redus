@@ -20,7 +20,7 @@ Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle 
 
 ```yaml
 dependencies:
-  redus_flutter: ^0.6.0
+  redus_flutter: ^0.7.0
 ```
 
 ## Quick Start
@@ -42,7 +42,7 @@ class Counter extends ReactiveWidget {
 
   @override
   void setup() {
-    onMounted(() => print('Count: ${store.count.value}'));
+    onMounted((context) => print('Count: ${store.count.value}'));
   }
 
   @override
@@ -66,7 +66,7 @@ class Counter extends BindWidget {
 
   @override
   void setup() {
-    onMounted(() => print('Mounted!'));
+    onMounted((_) => print('Mounted!'));
   }
 
   @override
@@ -154,9 +154,33 @@ class MyStatelessWidget extends StatelessWidget {
 | `onBeforeMount` | Before first build |
 | `onBeforeUpdate` | Before rebuild |
 | `onBeforeUnmount` | Before dispose |
+| `onDependenciesChanged` | When InheritedWidget deps change |
+| `onAfterDependenciesChanged` | After processing dep changes |
 | `onErrorCaptured` | Error boundary |
 | `onActivated` | Widget activated |
 | `onDeactivated` | Widget deactivated |
+
+All lifecycle callbacks receive `BuildContext` as a parameter, allowing access to InheritedWidgets:
+
+```dart
+@override
+void setup() {
+  onMounted((context) {
+    final theme = Theme.of(context);
+    final size = MediaQuery.of(context).size;
+    print('Mounted with screen width: ${size.width}');
+  });
+
+  onDependenciesChanged((context) {
+    // React to theme, locale, or media query changes
+    final brightness = Theme.of(context).brightness;
+    print('Theme changed to: $brightness');
+  });
+  
+  // Use underscore if context not needed
+  onUpdated((_) => print('Widget updated'));
+}
+```
 
 ## Composable Architecture
 

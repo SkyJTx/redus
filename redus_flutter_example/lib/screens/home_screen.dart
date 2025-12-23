@@ -18,7 +18,11 @@ class HomeScreen extends StatelessWidget {
           // Feature Cards
           const Text(
             'Core Features',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 24),
 
@@ -27,17 +31,26 @@ class HomeScreen extends StatelessWidget {
             builder: (context, constraints) {
               if (constraints.maxWidth < 600) {
                 // Single column on mobile
-                return Column(children: _buildFeatureCards(context, double.infinity));
+                return Column(
+                  children: _buildFeatureCards(context, double.infinity),
+                );
               } else if (constraints.maxWidth < 900) {
                 // 2 columns on tablet
                 return Wrap(
                   spacing: 16,
                   runSpacing: 16,
-                  children: _buildFeatureCards(context, (constraints.maxWidth - 16) / 2),
+                  children: _buildFeatureCards(
+                    context,
+                    (constraints.maxWidth - 16) / 2,
+                  ),
                 );
               }
               // 4 columns on desktop
-              return Wrap(spacing: 16, runSpacing: 16, children: _buildFeatureCards(context, 280));
+              return Wrap(
+                spacing: 16,
+                runSpacing: 16,
+                children: _buildFeatureCards(context, 280),
+              );
             },
           ),
 
@@ -76,7 +89,8 @@ class HomeScreen extends StatelessWidget {
         width: width,
         icon: Icons.integration_instructions,
         title: 'Dependency Injection',
-        description: 'Simple service locator pattern. Register once, get anywhere.',
+        description:
+            'Simple service locator pattern. Register once, get anywhere.',
         gradient: const [Color(0xFF10B981), Color(0xFF059669)],
         onTap: () => _navigateTo(context, 3),
       ),
@@ -85,7 +99,8 @@ class HomeScreen extends StatelessWidget {
         width: width,
         icon: Icons.widgets,
         title: 'Reactive Widgets',
-        description: 'Observe, ObserveEffect, ReactiveWidget. Seamless Flutter integration.',
+        description:
+            'Observe, ObserveEffect, ReactiveWidget. Seamless Flutter integration.',
         gradient: const [Color(0xFFF59E0B), Color(0xFFD97706)],
         onTap: () => _navigateTo(context, 4),
       ),
@@ -130,7 +145,11 @@ class _HeroSection extends StatelessWidget {
           child: isNarrow
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [_buildLogo(120), const SizedBox(height: 24), _buildContent(isNarrow)],
+                  children: [
+                    _buildLogo(120),
+                    const SizedBox(height: 24),
+                    _buildContent(isNarrow),
+                  ],
                 )
               : Row(
                   children: [
@@ -146,7 +165,9 @@ class _HeroSection extends StatelessWidget {
 
   Widget _buildContent(bool isNarrow) {
     return Column(
-      crossAxisAlignment: isNarrow ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+      crossAxisAlignment: isNarrow
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.start,
       children: [
         Wrap(
           spacing: 8,
@@ -162,7 +183,10 @@ class _HeroSection extends StatelessWidget {
               ),
               child: const Text(
                 'redus',
-                style: TextStyle(color: Color(0xFF6C63FF), fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Color(0xFF6C63FF),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             Container(
@@ -174,7 +198,10 @@ class _HeroSection extends StatelessWidget {
               ),
               child: const Text(
                 'redus_flutter',
-                style: TextStyle(color: Color(0xFF00D9FF), fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Color(0xFF00D9FF),
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
@@ -322,10 +349,17 @@ class _FeatureCardState extends State<_FeatureCard> {
                 children: [
                   Text(
                     'Explore',
-                    style: TextStyle(color: widget.gradient.first, fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: widget.gradient.first,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(Icons.arrow_forward, size: 16, color: widget.gradient.first),
+                  Icon(
+                    Icons.arrow_forward,
+                    size: 16,
+                    color: widget.gradient.first,
+                  ),
                 ],
               ),
             ],
@@ -353,7 +387,11 @@ class _PackageInfoSection extends StatelessWidget {
         children: [
           const Text(
             'Quick Start',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 16),
           Container(

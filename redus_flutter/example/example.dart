@@ -25,7 +25,7 @@ class ExampleApp extends ReactiveWidget {
 
   @override
   void setup() {
-    onMounted(() => debugPrint('ExampleApp mounted!'));
+    onMounted((context) => debugPrint('ExampleApp mounted!'));
   }
 
   @override

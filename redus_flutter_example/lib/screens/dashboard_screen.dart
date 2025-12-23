@@ -15,7 +15,7 @@ class DashboardScreen extends ReactiveWidget {
   void setup() {
     final store = get<DashboardStore>();
 
-    onMounted(() {
+    onMounted((context) {
       debugPrint('🚀 Dashboard mounted');
     });
 
@@ -28,7 +28,7 @@ class DashboardScreen extends ReactiveWidget {
       }
     });
 
-    onUnmounted(() => debugPrint('👋 Dashboard unmounted'));
+    onUnmounted((context) => debugPrint('👋 Dashboard unmounted'));
   }
 
   @override
@@ -127,14 +127,19 @@ class _DashboardHeader extends StatelessWidget {
               onTap: store.toggleLiveUpdates,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: isLive
                       ? const Color(0xFF10B981).withValues(alpha: 0.2)
                       : const Color(0xFF1D1E33),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isLive ? const Color(0xFF10B981) : Colors.white.withValues(alpha: 0.1),
+                    color: isLive
+                        ? const Color(0xFF10B981)
+                        : Colors.white.withValues(alpha: 0.1),
                   ),
                 ),
                 child: Row(
@@ -152,7 +157,9 @@ class _DashboardHeader extends StatelessWidget {
                         boxShadow: isLive
                             ? [
                                 BoxShadow(
-                                  color: const Color(0xFF10B981).withValues(alpha: 0.6),
+                                  color: const Color(
+                                    0xFF10B981,
+                                  ).withValues(alpha: 0.6),
                                   blurRadius: 6,
                                   spreadRadius: 2,
                                 ),
@@ -321,8 +328,11 @@ class _StatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: (isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444))
-                      .withOpacity(0.2),
+                  color:
+                      (isPositive
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFEF4444))
+                          .withOpacity(0.2),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Row(
@@ -330,7 +340,9 @@ class _StatCard extends StatelessWidget {
                     Icon(
                       isPositive ? Icons.trending_up : Icons.trending_down,
                       size: 12,
-                      color: isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                      color: isPositive
+                          ? const Color(0xFF10B981)
+                          : const Color(0xFFEF4444),
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -338,7 +350,9 @@ class _StatCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
-                        color: isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                        color: isPositive
+                            ? const Color(0xFF10B981)
+                            : const Color(0xFFEF4444),
                       ),
                     ),
                   ],
@@ -352,7 +366,11 @@ class _StatCard extends StatelessWidget {
             tween: Tween(begin: 0.95, end: 1.0),
             duration: const Duration(milliseconds: 200),
             builder: (context, scale, child) {
-              return Transform.scale(scale: scale, alignment: Alignment.centerLeft, child: child);
+              return Transform.scale(
+                scale: scale,
+                alignment: Alignment.centerLeft,
+                child: child,
+              );
             },
             child: Text(
               value,
@@ -364,7 +382,13 @@ class _StatCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 4),
-          Text(title, style: TextStyle(fontSize: 13, color: Colors.white.withOpacity(0.6))),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 13,
+              color: Colors.white.withOpacity(0.6),
+            ),
+          ),
         ],
       ),
     );
@@ -393,17 +417,27 @@ class _ActivityChart extends StatelessWidget {
             children: [
               const Text(
                 'Activity Overview',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               Observe<double>(
                 source: store.activityTrend.call,
                 builder: (_, trend) {
                   final isPositive = trend >= 0;
                   return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
-                      color: (isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444))
-                          .withOpacity(0.2),
+                      color:
+                          (isPositive
+                                  ? const Color(0xFF10B981)
+                                  : const Color(0xFFEF4444))
+                              .withOpacity(0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -411,7 +445,9 @@ class _ActivityChart extends StatelessWidget {
                         Icon(
                           isPositive ? Icons.trending_up : Icons.trending_down,
                           size: 14,
-                          color: isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                          color: isPositive
+                              ? const Color(0xFF10B981)
+                              : const Color(0xFFEF4444),
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -419,7 +455,9 @@ class _ActivityChart extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isPositive ? const Color(0xFF10B981) : const Color(0xFFEF4444),
+                            color: isPositive
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFFEF4444),
                           ),
                         ),
                       ],
@@ -456,7 +494,10 @@ class _ActivityChart extends StatelessWidget {
                               height: animHeight,
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
-                                  colors: [const Color(0xFF6C63FF), const Color(0xFF00D9FF)],
+                                  colors: [
+                                    const Color(0xFF6C63FF),
+                                    const Color(0xFF00D9FF),
+                                  ],
                                   begin: Alignment.bottomCenter,
                                   end: Alignment.topCenter,
                                 ),
@@ -514,7 +555,10 @@ class _NotificationsPanel extends StatelessWidget {
                     builder: (_, count) {
                       if (count == 0) return const SizedBox.shrink();
                       return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: const Color(0xFFEF4444),
                           borderRadius: BorderRadius.circular(10),
@@ -599,7 +643,9 @@ class _NotificationTile extends StatelessWidget {
               height: 8,
               margin: const EdgeInsets.only(top: 4),
               decoration: BoxDecoration(
-                color: notification.isRead ? Colors.transparent : const Color(0xFF6C63FF),
+                color: notification.isRead
+                    ? Colors.transparent
+                    : const Color(0xFF6C63FF),
                 shape: BoxShape.circle,
               ),
             ),
@@ -611,7 +657,9 @@ class _NotificationTile extends StatelessWidget {
                   Text(
                     notification.title,
                     style: TextStyle(
-                      fontWeight: notification.isRead ? FontWeight.normal : FontWeight.w600,
+                      fontWeight: notification.isRead
+                          ? FontWeight.normal
+                          : FontWeight.w600,
                       color: Colors.white,
                       fontSize: 13,
                     ),
@@ -619,12 +667,18 @@ class _NotificationTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     notification.message,
-                    style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.5)),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withOpacity(0.5),
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     _formatTime(notification.time),
-                    style: TextStyle(fontSize: 10, color: Colors.white.withOpacity(0.3)),
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.white.withOpacity(0.3),
+                    ),
                   ),
                 ],
               ),

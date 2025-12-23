@@ -20,13 +20,20 @@ class ReactivityScreen extends StatelessWidget {
             ).createShader(bounds),
             child: const Text(
               '⚡ Reactivity System',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Fine-grained reactivity inspired by Vue\'s Composition API',
-            style: TextStyle(fontSize: 16, color: Colors.white.withValues(alpha: 0.6)),
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.white.withValues(alpha: 0.6),
+            ),
           ),
           const SizedBox(height: 32),
 
@@ -134,7 +141,9 @@ class _ComputedDemo extends ReactiveWidget {
 
   late final firstName = bind(() => ref('John'));
   late final lastName = bind(() => ref('Doe'));
-  late final fullName = bind(() => computed(() => '${firstName.value} ${lastName.value}'));
+  late final fullName = bind(
+    () => computed(() => '${firstName.value} ${lastName.value}'),
+  );
 
   @override
   void setup() {}
@@ -227,7 +236,10 @@ class _ComputedInputsState extends State<_ComputedInputs> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
           ),
         ),
@@ -246,7 +258,10 @@ class _ComputedInputsState extends State<_ComputedInputs> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
             ),
           ),
         ),
@@ -269,7 +284,12 @@ class _WatchDemo extends ReactiveWidget {
     // This is the REAL watch() from redus!
     watch(() => searchQuery.value, (newValue, oldValue, onCleanup) {
       if (newValue.isNotEmpty) {
-        final timestamp = DateTime.now().toString().split('.').first.split(' ').last;
+        final timestamp = DateTime.now()
+            .toString()
+            .split('.')
+            .first
+            .split(' ')
+            .last;
         logs.value = [
           '[$timestamp] Query: "$oldValue" → "$newValue"',
           ...logs.value,
@@ -387,7 +407,10 @@ class _WatchInputState extends State<_WatchInput> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 12,
+        ),
       ),
     );
   }
@@ -415,7 +438,9 @@ class _DemoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cardWidth = constraints.maxWidth < 400 ? constraints.maxWidth : 360.0;
+        final cardWidth = constraints.maxWidth < 400
+            ? constraints.maxWidth
+            : 360.0;
         return Container(
           width: cardWidth,
           padding: const EdgeInsets.all(24),
@@ -445,7 +470,11 @@ class _DemoCard extends StatelessWidget {
                       children: [
                         Text(
                           title,
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: color,
+                          ),
                         ),
                         Text(
                           subtitle,
@@ -493,7 +522,11 @@ class _CodeSnippet extends StatelessWidget {
             children: [
               Text(
                 'Code',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
               ),
               GestureDetector(
                 onTap: () {
@@ -503,11 +536,17 @@ class _CodeSnippet extends StatelessWidget {
                       content: const Text('Copied to clipboard!'),
                       backgroundColor: color,
                       behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   );
                 },
-                child: Icon(Icons.copy, size: 16, color: Colors.white.withValues(alpha: 0.5)),
+                child: Icon(
+                  Icons.copy,
+                  size: 16,
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
               ),
             ],
           ),
@@ -532,7 +571,11 @@ class _ActionButton extends StatefulWidget {
   final VoidCallback onTap;
   final Color color;
 
-  const _ActionButton({required this.icon, required this.onTap, required this.color});
+  const _ActionButton({
+    required this.icon,
+    required this.onTap,
+    required this.color,
+  });
 
   @override
   State<_ActionButton> createState() => _ActionButtonState();
@@ -553,11 +596,16 @@ class _ActionButtonState extends State<_ActionButton> {
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: _isPressed ? widget.color : widget.color.withValues(alpha: 0.2),
+          color: _isPressed
+              ? widget.color
+              : widget.color.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: widget.color),
         ),
-        child: Icon(widget.icon, color: _isPressed ? Colors.white : widget.color),
+        child: Icon(
+          widget.icon,
+          color: _isPressed ? Colors.white : widget.color,
+        ),
       ),
     );
   }

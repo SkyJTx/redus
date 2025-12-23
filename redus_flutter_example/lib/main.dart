@@ -30,11 +30,15 @@ class RedusShowcaseApp extends StatelessWidget {
         ),
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFF0A0E21),
-        appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
         cardTheme: CardThemeData(
           color: const Color(0xFF1D1E33),
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
         ),
       ),

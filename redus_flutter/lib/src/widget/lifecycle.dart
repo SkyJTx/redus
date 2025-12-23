@@ -4,10 +4,14 @@
 /// They must be called during [Component.setup].
 library;
 
+import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
 
 /// Callback type for lifecycle hooks.
-typedef LifecycleCallback = void Function();
+///
+/// Receives the [BuildContext] to allow access to InheritedWidgets
+/// like MediaQuery, Theme, Navigator, etc.
+typedef LifecycleCallback = void Function(BuildContext context);
 
 /// Callback type for error handling.
 typedef ErrorCallback = bool? Function(Object error, StackTrace stack);
@@ -40,6 +44,8 @@ mixin LifecycleHooks {
   final List<RenderDebugCallback> _onRenderTriggeredCallbacks = [];
   final List<LifecycleCallback> _onActivatedCallbacks = [];
   final List<LifecycleCallback> _onDeactivatedCallbacks = [];
+  final List<LifecycleCallback> _onDependenciesChangedCallbacks = [];
+  final List<LifecycleCallback> _onAfterDependenciesChangedCallbacks = [];
 
   /// Register a callback to be called before the component mounts.
   ///
@@ -118,46 +124,65 @@ mixin LifecycleHooks {
     _onDeactivatedCallbacks.add(callback);
   }
 
+  /// Register a callback called when InheritedWidget dependencies change.
+  ///
+  /// Called when MediaQuery, Theme, Locale, or other InheritedWidgets change.
+  /// This is triggered before processing the change.
+  ///
+  /// Note: NOT called on initial mount. Use [onMounted] for initial setup.
+  void onDependenciesChanged(LifecycleCallback callback) {
+    _onDependenciesChangedCallbacks.add(callback);
+  }
+
+  /// Register a callback called after InheritedWidget dependencies change.
+  ///
+  /// Called after processing the change from MediaQuery, Theme, Locale, etc.
+  ///
+  /// Note: NOT called on initial mount. Use [onMounted] for initial setup.
+  void onAfterDependenciesChanged(LifecycleCallback callback) {
+    _onAfterDependenciesChangedCallbacks.add(callback);
+  }
+
   // Internal: Execute callbacks - @internal prevents public use while allowing package access
   @internal
-  void runBeforeMount() {
+  void runBeforeMount(BuildContext context) {
     for (final cb in _onBeforeMountCallbacks) {
-      cb();
+      cb(context);
     }
   }
 
   @internal
-  void runMounted() {
+  void runMounted(BuildContext context) {
     for (final cb in _onMountedCallbacks) {
-      cb();
+      cb(context);
     }
   }
 
   @internal
-  void runBeforeUpdate() {
+  void runBeforeUpdate(BuildContext context) {
     for (final cb in _onBeforeUpdateCallbacks) {
-      cb();
+      cb(context);
     }
   }
 
   @internal
-  void runUpdated() {
+  void runUpdated(BuildContext context) {
     for (final cb in _onUpdatedCallbacks) {
-      cb();
+      cb(context);
     }
   }
 
   @internal
-  void runBeforeUnmount() {
+  void runBeforeUnmount(BuildContext context) {
     for (final cb in _onBeforeUnmountCallbacks) {
-      cb();
+      cb(context);
     }
   }
 
   @internal
-  void runUnmounted() {
+  void runUnmounted(BuildContext context) {
     for (final cb in _onUnmountedCallbacks) {
-      cb();
+      cb(context);
     }
   }
 
@@ -186,16 +211,30 @@ mixin LifecycleHooks {
   }
 
   @internal
-  void runActivated() {
+  void runActivated(BuildContext context) {
     for (final cb in _onActivatedCallbacks) {
-      cb();
+      cb(context);
     }
   }
 
   @internal
-  void runDeactivated() {
+  void runDeactivated(BuildContext context) {
     for (final cb in _onDeactivatedCallbacks) {
-      cb();
+      cb(context);
+    }
+  }
+
+  @internal
+  void runDependenciesChanged(BuildContext context) {
+    for (final cb in _onDependenciesChangedCallbacks) {
+      cb(context);
+    }
+  }
+
+  @internal
+  void runAfterDependenciesChanged(BuildContext context) {
+    for (final cb in _onAfterDependenciesChangedCallbacks) {
+      cb(context);
     }
   }
 
@@ -216,5 +255,7 @@ mixin LifecycleHooks {
     _onRenderTriggeredCallbacks.clear();
     _onActivatedCallbacks.clear();
     _onDeactivatedCallbacks.clear();
+    _onDependenciesChangedCallbacks.clear();
+    _onAfterDependenciesChangedCallbacks.clear();
   }
 }

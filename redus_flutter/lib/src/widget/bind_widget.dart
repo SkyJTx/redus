@@ -70,12 +70,31 @@ abstract class BindWidget extends Widget with BindMixin, LifecycleHooks {
 /// Element for BindWidget - provides bind() and lifecycle without reactivity.
 class BindWidgetElement extends BindableElement {
   bool _isFirstBuild = true;
+  bool _dependenciesInitialized = false;
 
   /// Creates a BindWidgetElement for the given BindWidget.
   BindWidgetElement(BindWidget super.widget);
 
   /// The associated BindWidget.
   BindWidget get bindWidget => widget as BindWidget;
+
+  @override
+  void didChangeDependencies() {
+    // Skip first call (during mount) - use onMounted for initial setup
+    if (!_dependenciesInitialized) {
+      _dependenciesInitialized = true;
+      super.didChangeDependencies();
+      return;
+    }
+
+    // Run before hook
+    bindWidget.runDependenciesChanged(this);
+
+    super.didChangeDependencies();
+
+    // Run after hook
+    bindWidget.runAfterDependenciesChanged(this);
+  }
 
   @override
   void mount(Element? parent, Object? newSlot) {
@@ -87,7 +106,7 @@ class BindWidgetElement extends BindableElement {
     bindWidget.setup();
 
     // Before mount hook
-    bindWidget.runBeforeMount();
+    bindWidget.runBeforeMount(this);
 
     super.mount(parent, newSlot);
   }
@@ -105,13 +124,13 @@ class BindWidgetElement extends BindableElement {
       _isFirstBuild = false;
       SchedulerBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          bindWidget.runMounted();
+          bindWidget.runMounted(this);
         }
       });
     } else {
       SchedulerBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          bindWidget.runUpdated();
+          bindWidget.runUpdated(this);
         }
       });
     }
@@ -122,7 +141,7 @@ class BindWidgetElement extends BindableElement {
   @override
   void update(covariant BindWidget newWidget) {
     // Before update hook (on old widget)
-    bindWidget.runBeforeUpdate();
+    bindWidget.runBeforeUpdate(this);
 
     // Clear old widget's expando reference
     bindExpando[bindWidget] = null;
@@ -140,19 +159,19 @@ class BindWidgetElement extends BindableElement {
   void activate() {
     super.activate();
     bindExpando[bindWidget] = this;
-    bindWidget.runActivated();
+    bindWidget.runActivated(this);
   }
 
   @override
   void deactivate() {
-    bindWidget.runDeactivated();
+    bindWidget.runDeactivated(this);
     super.deactivate();
   }
 
   @override
   void unmount() {
-    bindWidget.runBeforeUnmount();
-    bindWidget.runUnmounted();
+    bindWidget.runBeforeUnmount(this);
+    bindWidget.runUnmounted(this);
     // Clear callbacks to prevent accumulation if widget instance is reused
     bindWidget.clearLifecycleCallbacks();
     bindExpando[bindWidget] = null;
