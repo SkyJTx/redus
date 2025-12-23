@@ -49,7 +49,6 @@ export 'lifecycle.dart';
 /// ```
 abstract class ReactiveWidget extends Widget with LifecycleHooks {
   /// Creates a reactive widget.
-  // ignore: prefer_const_constructors_in_immutables
   ReactiveWidget({super.key});
 
   /// Called once when the Element is mounted.
@@ -127,6 +126,10 @@ class ReactiveElement extends ComponentElement {
   bool _isRendering = false;
   Object? _error;
 
+  /// Track the last widget we processed bind() calls for.
+  /// Used to reset _bindIndex when widget instance changes.
+  ReactiveWidget? _lastBoundWidget;
+
   /// Creates a ReactiveElement for the given ReactiveWidget.
   ReactiveElement(ReactiveWidget super.widget);
 
@@ -143,6 +146,10 @@ class ReactiveElement extends ComponentElement {
   void mount(Element? parent, Object? newSlot) {
     // Link widget to this element via expando
     _elementExpando[reactiveWidget] = this;
+
+    // Reset bind index and track widget for first mount
+    _bindIndex = 0;
+    _lastBoundWidget = reactiveWidget;
 
     // Create effect scope for cleanup
     _scope = effectScope();
@@ -181,8 +188,13 @@ class ReactiveElement extends ComponentElement {
     // Re-link widget to element via expando (widget may be new instance after parent rebuild)
     _elementExpando[reactiveWidget] = this;
 
-    // Reset bind index for consistent ordering
-    _bindIndex = 0;
+    // Reset bind index when widget instance changes (parent rebuild scenario).
+    // This ensures the new widget's late final fields get correct indices.
+    // Don't reset if it's the same widget (e.g., between setup() and first render()).
+    if (!identical(reactiveWidget, _lastBoundWidget)) {
+      _bindIndex = 0;
+      _lastBoundWidget = reactiveWidget;
+    }
 
     // Handle error state
     if (_error != null) {

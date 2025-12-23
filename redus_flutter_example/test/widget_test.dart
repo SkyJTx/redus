@@ -2,61 +2,71 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:redus_flutter/redus_flutter.dart';
 import 'package:redus_flutter_example/main.dart';
-import 'package:redus_flutter_example/services/todo_store.dart';
+import 'package:redus_flutter_example/stores/dashboard_store.dart';
 
 void main() {
   setUp(() {
-    // Reset services before each test
-    // Assuming ServiceLocator has a reset method or we just re-register
-    // Since we don't expose reset publicly in main interface, we might need to handle it differently
-    // Actually, looking at service_locator definition, there is no top-level reset,
-    // but the singleton is global. We should be careful.
-    // However, since we are inside tests, we can re-register.
-    try {
-      get<TodoStore>();
-      // Already registered, maybe from previous test?
-    } catch (_) {
-      // Not registered
-    }
-    // Simplest way for test isolation is to register a fresh store
-    // Since register throws or overwrites? Let's check impl.
-    // The implementation uses _singletons[T] = instance, so it overwrites.
-    register<TodoStore>(TodoStore());
+    // Register dependencies for testing
+    register<DashboardStore>(DashboardStore());
   });
 
-  testWidgets('Todo app smoke test', (WidgetTester tester) async {
+  testWidgets('Showcase app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const TodoApp());
-
-    // Wait for the simulated loading (1 second)
-    // We need to pump frames for async operations
-    await tester.pump(); // Initial
-    await tester.pump(const Duration(seconds: 1)); // Wait for delay
-    await tester.pump(); // Update UI
-
-    // Verify that we have loaded items
-    expect(find.text('Learn Flutter'), findsOneWidget);
-    expect(find.text('Try Redus Package'), findsOneWidget);
-
-    // Tap the add button without text - nothing should happen
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Enter text
-    await tester.enterText(find.byType(TextField), 'New Task');
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify new task
-    expect(find.text('New Task'), findsOneWidget);
-
-    // Filter to Active
-    await tester.tap(find.text('Active'));
+    await tester.pumpWidget(const RedusShowcaseApp());
     await tester.pumpAndSettle();
 
-    // Verify filter works (completed items should be gone)
-    // 'Learn Flutter' is completed in mock data
-    expect(find.text('Learn Flutter'), findsNothing);
-    expect(find.text('New Task'), findsOneWidget);
+    // Verify home screen is displayed
+    expect(find.text('Vue-like Reactivity\nfor Flutter'), findsOneWidget);
+    expect(find.text('Core Features'), findsOneWidget);
+
+    // Verify feature cards are present
+    expect(find.text('Fine-Grained Reactivity'), findsOneWidget);
+    expect(find.text('Lifecycle Hooks'), findsOneWidget);
+    expect(find.text('Dependency Injection'), findsOneWidget);
+    expect(find.text('Reactive Widgets'), findsOneWidget);
+
+    // Verify navigation rail is present
+    expect(find.byIcon(Icons.home), findsOneWidget);
+    expect(find.byIcon(Icons.bolt), findsOneWidget);
+  });
+
+  testWidgets('Navigation works correctly', (WidgetTester tester) async {
+    await tester.pumpWidget(const RedusShowcaseApp());
+    await tester.pumpAndSettle();
+
+    // Navigate to Reactivity screen
+    await tester.tap(find.byIcon(Icons.bolt_outlined));
+    await tester.pumpAndSettle();
+
+    // Verify Reactivity screen content
+    expect(find.text('⚡ Reactivity System'), findsOneWidget);
+    expect(find.text('ref()'), findsOneWidget);
+    expect(find.text('computed()'), findsOneWidget);
+    expect(find.text('watch()'), findsOneWidget);
+
+    // Navigate to Lifecycle screen
+    await tester.tap(find.byIcon(Icons.loop_outlined));
+    await tester.pumpAndSettle();
+
+    // Verify Lifecycle screen content
+    expect(find.text('🔄 Lifecycle Hooks'), findsOneWidget);
+    expect(find.text('Lifecycle Order'), findsOneWidget);
+
+    // Navigate to DI screen
+    await tester.tap(find.byIcon(Icons.integration_instructions_outlined));
+    await tester.pumpAndSettle();
+
+    // Verify DI screen content
+    expect(find.text('💉 Dependency Injection'), findsOneWidget);
+    expect(find.text('register() / get()'), findsOneWidget);
+
+    // Navigate to Dashboard screen
+    await tester.tap(find.byIcon(Icons.dashboard_outlined));
+    await tester.pumpAndSettle();
+
+    // Verify Dashboard screen content
+    expect(find.text('🚀 Real-time Dashboard'), findsOneWidget);
+    expect(find.text('Revenue'), findsOneWidget);
+    expect(find.text('Active Users'), findsOneWidget);
   });
 }
