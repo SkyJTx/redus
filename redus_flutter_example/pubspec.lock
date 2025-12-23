@@ -143,17 +143,17 @@ packages:
     dependency: transitive
     description:
       name: redus
-      sha256: a33e573991ca7d4365896663d13cfdf4b67ee6e84a6efb7b20fc277a07507a56
+      sha256: e41a8c267637904e38725c1dfc57addb034798af7e192f5deb1a83c8099ef94c
       url: "https://pub.dev"
     source: hosted
-    version: "0.4.1"
+    version: "0.4.4"
   redus_flutter:
     dependency: "direct main"
     description:
       path: "../redus_flutter"
       relative: true
     source: path
-    version: "0.3.0"
+    version: "0.5.2"
   sky_engine:
     dependency: transitive
     description: flutter
