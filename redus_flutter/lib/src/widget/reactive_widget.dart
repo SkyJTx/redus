@@ -295,6 +295,8 @@ class ReactiveElement extends ComponentElement {
     _renderEffect.stop();
     _scope.stop();
     reactiveWidget.runUnmounted();
+    // Clear callbacks to prevent accumulation if widget instance is reused
+    reactiveWidget.clearLifecycleCallbacks();
     _elementExpando[reactiveWidget] = null;
     super.unmount();
   }

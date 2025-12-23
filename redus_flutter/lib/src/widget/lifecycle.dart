@@ -198,4 +198,23 @@ mixin LifecycleHooks {
       cb();
     }
   }
+
+  /// Clear all lifecycle callbacks.
+  ///
+  /// Called when element unmounts to prevent callback accumulation
+  /// when widget instance is reused.
+  @internal
+  void clearLifecycleCallbacks() {
+    _onBeforeMountCallbacks.clear();
+    _onMountedCallbacks.clear();
+    _onBeforeUpdateCallbacks.clear();
+    _onUpdatedCallbacks.clear();
+    _onBeforeUnmountCallbacks.clear();
+    _onUnmountedCallbacks.clear();
+    _onErrorCapturedCallbacks.clear();
+    _onRenderTrackedCallbacks.clear();
+    _onRenderTriggeredCallbacks.clear();
+    _onActivatedCallbacks.clear();
+    _onDeactivatedCallbacks.clear();
+  }
 }

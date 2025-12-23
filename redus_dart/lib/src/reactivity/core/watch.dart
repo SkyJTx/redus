@@ -5,6 +5,7 @@ import 'computed.dart';
 import 'effect.dart';
 import 'ref.dart';
 import 'types.dart';
+import '../advanced/scope.dart';
 
 // Re-export for internal use
 export 'effect.dart' show activeEffect, effectStack, onWatcherCleanup;
@@ -70,6 +71,9 @@ WatchHandle watchEffect(
     },
     flush: options.flush,
   );
+
+  // Register with current scope so it's stopped when scope stops
+  reactiveEffect.registerWithScope();
 
   // Run immediately
   reactiveEffect.run();
@@ -164,6 +168,9 @@ WatchHandle watch<T>(
     },
     flush: options.flush,
   );
+
+  // Register with current scope so it's stopped when scope stops
+  effect.registerWithScope();
 
   // Initial run to set up tracking
   effect.run();

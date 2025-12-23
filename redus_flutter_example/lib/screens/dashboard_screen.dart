@@ -10,30 +10,22 @@ class DashboardScreen extends ReactiveWidget {
   @override
   void setup() {
     final store = get<DashboardStore>();
-    Timer? updateTimer;
 
     onMounted(() {
       debugPrint('🚀 Dashboard mounted');
     });
 
-    // Watch for live updates toggle
-    watch(() => store.isLiveUpdates.value, (isLive, _, onCleanup) {
-      if (isLive) {
-        updateTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+    // Reactive timer that runs immediately if live, cleans up on each re-run
+    watchEffect((onCleanup) {
+      if (store.isLiveUpdates.value) {
+        final timer = Timer.periodic(const Duration(seconds: 2), (_) {
           store.simulateUpdate();
         });
-        onCleanup(() {
-          updateTimer?.cancel();
-        });
-      } else {
-        updateTimer?.cancel();
+        onCleanup(() => timer.cancel());
       }
     });
 
-    onUnmounted(() {
-      updateTimer?.cancel();
-      debugPrint('👋 Dashboard unmounted');
-    });
+    onUnmounted(() => debugPrint('👋 Dashboard unmounted'));
   }
 
   @override
