@@ -1,9 +1,13 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:redus_flutter/redus_flutter.dart';
 import '../stores/dashboard_store.dart';
 
 /// Complex real-time dashboard demonstrating all redus features
+///
+/// This demonstrates the proper separation of concerns:
+/// - Store manages its own data stream (background updates)
+/// - UI subscribes/unsubscribes via the Live toggle
+/// - Data persists even when navigating away from dashboard
 class DashboardScreen extends ReactiveWidget {
   DashboardScreen({super.key});
 
@@ -15,13 +19,12 @@ class DashboardScreen extends ReactiveWidget {
       debugPrint('🚀 Dashboard mounted');
     });
 
-    // Reactive timer that runs immediately if live, cleans up on each re-run
+    // React to Live toggle - start/stop background updates
+    // The store owns the timer, so data accumulates even when UI is not visible
     watchEffect((onCleanup) {
       if (store.isLiveUpdates.value) {
-        final timer = Timer.periodic(const Duration(seconds: 2), (_) {
-          store.simulateUpdate();
-        });
-        onCleanup(() => timer.cancel());
+        store.startBackgroundUpdates();
+        onCleanup(() => store.stopBackgroundUpdates());
       }
     });
 

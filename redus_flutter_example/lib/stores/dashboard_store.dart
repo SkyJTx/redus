@@ -1,7 +1,21 @@
+import 'dart:async';
+
 import 'package:redus_flutter/redus_flutter.dart';
 
 /// Real-time dashboard store demonstrating complex reactive state
+///
+/// This store simulates a real-world scenario where:
+/// - Data updates continuously in the background (from API/WebSocket)
+/// - The UI can subscribe/unsubscribe to receive live updates
+/// - Data persists even when the dashboard is not visible
 class DashboardStore {
+  /// Background timer that simulates continuous data updates
+  /// In a real app, this would be a WebSocket connection or polling service
+  Timer? _backgroundTimer;
+
+  /// Whether background updates are running
+  bool get isBackgroundActive => _backgroundTimer != null;
+
   // --- Reactive State ---
 
   /// Live metrics that update in real-time
@@ -51,7 +65,9 @@ class DashboardStore {
     9.2,
   ]);
 
-  /// Is real-time updates enabled
+  /// Controls whether the UI receives live updates from the background data stream.
+  /// When true, UI widgets will react to data changes.
+  /// When false, data still updates in background but UI won't refresh.
   final isLiveUpdates = ref(false);
 
   // --- Computed Properties ---
@@ -144,6 +160,30 @@ class DashboardStore {
       ),
       ...notifications.value,
     ];
+  }
+
+  // --- Background Data Stream Control ---
+
+  /// Start background data updates (simulates WebSocket/API stream)
+  /// Call this when the app initializes or dashboard becomes active
+  void startBackgroundUpdates() {
+    if (_backgroundTimer != null) return; // Already running
+
+    _backgroundTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+      simulateUpdate();
+    });
+  }
+
+  /// Stop background data updates
+  /// Call this when app goes to background or dashboard is no longer needed
+  void stopBackgroundUpdates() {
+    _backgroundTimer?.cancel();
+    _backgroundTimer = null;
+  }
+
+  /// Dispose of resources - call when store is no longer needed
+  void dispose() {
+    stopBackgroundUpdates();
   }
 }
 
