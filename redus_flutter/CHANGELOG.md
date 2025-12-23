@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2025-12-23
+
+### Fixed
+
+- **Lifecycle callback accumulation** - Fixed issue where `onMounted` and other lifecycle callbacks would accumulate when the same widget instance was reused across navigations. Callbacks are now cleared on unmount.
+- **Updated to redus ^0.4.4** - Includes fix for effects not being stopped when scope stops, preventing timer accumulation.
+
 ## [0.5.1] - 2025-12-23
 
 ### Fixed
