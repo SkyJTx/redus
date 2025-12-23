@@ -24,7 +24,7 @@
 ///
 ///   @override
 ///   void setup() {
-///     onMounted(() => print('Mounted!'));
+///     onMounted((context) => print('Mounted!'));
 ///   }
 ///
 ///   @override

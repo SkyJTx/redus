@@ -47,7 +47,7 @@ export 'lifecycle.dart';
 ///
 ///   @override
 ///   void setup() {
-///     onMounted(() => print('Mounted with count: ${store.count.value}'));
+///     onMounted((context) => print('Mounted with count: ${store.count.value}'));
 ///   }
 ///
 ///   @override
