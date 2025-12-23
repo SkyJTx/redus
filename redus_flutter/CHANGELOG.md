@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-12-23
+
+### Added
+
+- **`BindMixin`** - Decoupled `bind()` into a composable mixin
+  - Can be used with custom widgets for flexible state persistence
+  - Similar pattern to `LifecycleHooks` mixin
+  
+- **`BindableElementMixin`** - State storage mixin for custom elements
+  - Provides index-based state storage
+  - Handles bind index reset on widget recreation
+  
+- **`BindableElement`** - Base element class for bind-supporting widgets
+  - `ReactiveElement` now extends `BindableElement`
+  
+- **`BindWidget`** - Lightweight alternative to `ReactiveWidget`
+  - Provides `bind()` and lifecycle hooks
+  - No automatic reactivity in `build()` (use `Observe`/`ObserveEffect`)
+  - Simpler mental model with explicit reactivity control
+
+### Changed
+
+- **`ReactiveWidget` refactored** - Now composed of:
+  - `BindMixin` - for `bind()` API
+  - `LifecycleHooks` - for lifecycle callbacks
+  - Automatic reactivity in `render()`
+  
+- **Architecture** - Modular, composable architecture allows:
+  - `ReactiveWidget` = BindMixin + LifecycleHooks + auto-reactivity
+  - `BindWidget` = BindMixin + LifecycleHooks (no auto-reactivity)
+  - Custom widgets can use mixins directly
+
 ## [0.5.2] - 2025-12-23
 
 ### Fixed

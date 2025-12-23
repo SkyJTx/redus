@@ -2,14 +2,21 @@
 ///
 /// Provides Vue-like reactive state and lifecycle hooks with fine-grained
 /// reactivity using custom ReactiveElement.
+///
+/// Composed of:
+/// - [BindMixin] for state persistence via bind()
+/// - [LifecycleHooks] for lifecycle callbacks
+/// - Automatic reactive dependency tracking in render()
 library;
 
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:redus/reactivity.dart';
 
+import 'bind.dart';
 import 'lifecycle.dart';
 
+export 'bind.dart';
 export 'lifecycle.dart';
 
 /// A reactive widget with Vue-like lifecycle and automatic reactivity.
@@ -18,10 +25,15 @@ export 'lifecycle.dart';
 /// the Element (not Widget), solving Flutter's widget recreation issue.
 ///
 /// **Key Features:**
-/// - State persists across parent rebuilds
+/// - State persists across parent rebuilds (via [BindMixin])
 /// - Fine-grained reactivity via `markNeedsBuild()`
-/// - Vue-like lifecycle hooks (onMounted, onUnmounted, etc.)
+/// - Vue-like lifecycle hooks (via [LifecycleHooks])
 /// - Automatic reactive dependency tracking in render()
+///
+/// **Composition:**
+/// ReactiveWidget = BindMixin + LifecycleHooks + auto-reactivity
+///
+/// For a simpler widget without auto-reactivity, see [BindWidget].
 ///
 /// **Example:**
 /// ```dart
@@ -47,7 +59,7 @@ export 'lifecycle.dart';
 ///   }
 /// }
 /// ```
-abstract class ReactiveWidget extends Widget with LifecycleHooks {
+abstract class ReactiveWidget extends Widget with BindMixin, LifecycleHooks {
   /// Creates a reactive widget.
   ReactiveWidget({super.key});
 
@@ -57,7 +69,7 @@ abstract class ReactiveWidget extends Widget with LifecycleHooks {
   /// - Register lifecycle hooks with [onMounted], [onUnmounted], etc.
   /// - Set up watchers with [watchEffect], [watch], etc.
   ///
-  /// Note: State is now declared using [bind] on the class body.
+  /// Note: State is declared using [bind] on the class body.
   void setup();
 
   /// Build the UI for this widget.
@@ -66,69 +78,22 @@ abstract class ReactiveWidget extends Widget with LifecycleHooks {
   /// here are automatically tracked. The widget rebuilds when they change.
   Widget render(BuildContext context);
 
-  /// Bind a value to the Element's state storage.
-  ///
-  /// The factory is called once on first access. Subsequent calls
-  /// (including after parent rebuilds) return the existing value.
-  ///
-  /// Use this to create stores or reactive state that persists
-  /// across widget recreation:
-  ///
-  /// ```dart
-  /// class Counter extends ReactiveWidget {
-  ///   // State created once, persists across parent rebuilds
-  ///   late final store = bind(() => CounterStore());
-  ///
-  ///   // Can also bind individual refs
-  ///   late final count = bind(() => ref(0));
-  ///
-  ///   @override
-  ///   void setup() {
-  ///     onMounted(() => print('Mounted!'));
-  ///   }
-  ///
-  ///   @override
-  ///   Widget render(BuildContext context) {
-  ///     return Text('${store.count.value}');
-  ///   }
-  /// }
-  /// ```
-  T bind<T>(T Function() factory) {
-    final element = _elementExpando[this];
-    assert(
-        element != null, 'bind() can only be called after element is created');
-    return element!.getOrCreateByNextIndex(factory);
-  }
-
   @override
   ReactiveElement createElement() => ReactiveElement(this);
 }
 
-/// Expando to store Element reference for each Widget instance.
-/// This avoids non-final fields on the immutable Widget.
-final Expando<ReactiveElement> _elementExpando = Expando('ReactiveElement');
-
 /// Element that manages ReactiveWidget lifecycle and state storage.
 ///
-/// State is stored on the Element, not the Widget, so it persists
-/// across parent widget rebuilds.
-class ReactiveElement extends ComponentElement {
-  /// State storage - persists across Widget recreation.
-  /// Uses index-based keys from bind() calls.
-  final Map<int, dynamic> _stateStorage = {};
-
-  /// Current bind index - reset before each build/access cycle.
-  int _bindIndex = 0;
-
+/// Extends [BindableElement] for state persistence and adds:
+/// - EffectScope for cleanup
+/// - ReactiveEffect for automatic dependency tracking
+/// - Error boundary support
+class ReactiveElement extends BindableElement {
   late EffectScope _scope;
   late ReactiveEffect _renderEffect;
   bool _isFirstBuild = true;
   bool _isRendering = false;
   Object? _error;
-
-  /// Track the last widget we processed bind() calls for.
-  /// Used to reset _bindIndex when widget instance changes.
-  ReactiveWidget? _lastBoundWidget;
 
   /// Creates a ReactiveElement for the given ReactiveWidget.
   ReactiveElement(ReactiveWidget super.widget);
@@ -136,20 +101,11 @@ class ReactiveElement extends ComponentElement {
   /// The associated ReactiveWidget.
   ReactiveWidget get reactiveWidget => widget as ReactiveWidget;
 
-  /// Get or create state by next index. Factory only called on first access.
-  T getOrCreateByNextIndex<T>(T Function() factory) {
-    final index = _bindIndex++;
-    return _stateStorage.putIfAbsent(index, factory) as T;
-  }
-
   @override
   void mount(Element? parent, Object? newSlot) {
-    // Link widget to this element via expando
-    _elementExpando[reactiveWidget] = this;
-
-    // Reset bind index and track widget for first mount
-    _bindIndex = 0;
-    _lastBoundWidget = reactiveWidget;
+    // Link widget to this element
+    bindExpando[reactiveWidget] = this;
+    resetBindIndex(reactiveWidget);
 
     // Create effect scope for cleanup
     _scope = effectScope();
@@ -185,16 +141,9 @@ class ReactiveElement extends ComponentElement {
 
   @override
   Widget build() {
-    // Re-link widget to element via expando (widget may be new instance after parent rebuild)
-    _elementExpando[reactiveWidget] = this;
-
-    // Reset bind index when widget instance changes (parent rebuild scenario).
-    // This ensures the new widget's late final fields get correct indices.
-    // Don't reset if it's the same widget (e.g., between setup() and first render()).
-    if (!identical(reactiveWidget, _lastBoundWidget)) {
-      _bindIndex = 0;
-      _lastBoundWidget = reactiveWidget;
-    }
+    // Re-link widget to element (widget may be new instance after parent rebuild)
+    bindExpando[reactiveWidget] = this;
+    resetBindIndexIfNeeded(reactiveWidget);
 
     // Handle error state
     if (_error != null) {
@@ -262,24 +211,22 @@ class ReactiveElement extends ComponentElement {
     // Before update hook (on old widget)
     reactiveWidget.runBeforeUpdate();
 
-    // Clear old widget's expando reference to prevent stale access
-    _elementExpando[reactiveWidget] = null;
+    // Clear old widget's expando reference
+    bindExpando[reactiveWidget] = null;
 
-    // Link new widget to this element via expando BEFORE super.update
-    // This is critical - newWidget may have different props
-    _elementExpando[newWidget] = this;
+    // Link new widget to this element
+    bindExpando[newWidget] = this;
 
     super.update(newWidget);
 
     // Force rebuild to ensure render() uses the new widget's props
-    // ComponentElement.update() should do this, but we enforce it
     rebuild(force: true);
   }
 
   @override
   void activate() {
     super.activate();
-    _elementExpando[reactiveWidget] = this;
+    bindExpando[reactiveWidget] = this;
     reactiveWidget.runActivated();
   }
 
@@ -297,7 +244,7 @@ class ReactiveElement extends ComponentElement {
     reactiveWidget.runUnmounted();
     // Clear callbacks to prevent accumulation if widget instance is reused
     reactiveWidget.clearLifecycleCallbacks();
-    _elementExpando[reactiveWidget] = null;
+    bindExpando[reactiveWidget] = null;
     super.unmount();
   }
 }

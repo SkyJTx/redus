@@ -7,10 +7,12 @@ Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle 
 
 ## Features
 
-- 🎯 **ReactiveWidget** - Single-class component with state on Element
+- 🎯 **ReactiveWidget** - Single-class component with state on Element and auto-reactivity
+- 🔗 **BindWidget** - Lightweight widget with bind() and lifecycle (no auto-reactivity)
 - 👁️ **Observe** - Widget that watches a source and rebuilds
 - ⚡ **ObserveEffect** - Widget that auto-tracks dependencies
 - 🔄 **Lifecycle Hooks** - onMounted, onUpdated, onUnmounted, etc.
+- 🧩 **Composable Mixins** - BindMixin, LifecycleHooks for custom widgets
 - 💉 **Dependency Injection** - Type + key-based lookup (from `redus`)
 - 🧹 **Auto Cleanup** - Effect scopes tied to widget lifecycle
 
@@ -18,12 +20,14 @@ Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle 
 
 ```yaml
 dependencies:
-  redus_flutter: ^0.5.2
+  redus_flutter: ^0.6.0
 ```
 
 ## Quick Start
 
 ### ReactiveWidget with `bind()`
+
+Full reactivity with automatic dependency tracking in `render()`:
 
 ```dart
 import 'package:redus_flutter/redus_flutter.dart';
@@ -43,9 +47,37 @@ class Counter extends ReactiveWidget {
 
   @override
   Widget render(BuildContext context) {
+    // Auto-tracks store.count.value - rebuilds automatically
     return ElevatedButton(
       onPressed: store.increment,
       child: Text('Count: ${store.count.value}'),
+    );
+  }
+}
+```
+
+### BindWidget (Explicit Reactivity)
+
+Lightweight widget with `bind()` and lifecycle, but **no auto-reactivity**. Use `Observe`/`ObserveEffect` for reactive parts:
+
+```dart
+class Counter extends BindWidget {
+  late final count = bind(() => ref(0));
+
+  @override
+  void setup() {
+    onMounted(() => print('Mounted!'));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Use Observe for reactive parts
+    return Observe<int>(
+      source: count.call,
+      builder: (_, value) => ElevatedButton(
+        onPressed: () => count.value++,
+        child: Text('Count: $value'),
+      ),
     );
   }
 }
@@ -126,6 +158,24 @@ class MyStatelessWidget extends StatelessWidget {
 | `onActivated` | Widget activated |
 | `onDeactivated` | Widget deactivated |
 
+## Composable Architecture
+
+The library uses a composable mixin architecture:
+
+```dart
+// ReactiveWidget = BindMixin + LifecycleHooks + auto-reactivity
+abstract class ReactiveWidget extends Widget with BindMixin, LifecycleHooks { ... }
+
+// BindWidget = BindMixin + LifecycleHooks (no auto-reactivity)
+abstract class BindWidget extends Widget with BindMixin, LifecycleHooks { ... }
+
+// Custom widget with just bind()
+class MyWidget extends Widget with BindMixin {
+  late final state = bind(() => MyState());
+  // ...
+}
+```
+
 ## Dependency Injection
 
 DI comes from `redus` package with key support:
@@ -145,10 +195,11 @@ final log = get<Logger>(key: #console);
 
 | Widget | Use When |
 |--------|----------|
-| `ReactiveWidget` | Full component with lifecycle, stores |
+| `ReactiveWidget` | Full component with auto-reactivity, lifecycle, stores |
+| `BindWidget` | State persistence + lifecycle, explicit reactivity control |
 | `Observe<T>` | Watch specific source(s), explicit dependency |
-| `ObserveEffect` | Auto-track multiple dependencies |
-| `.watch(context)` | Simple inline reactive values |
+| `ObserveEffect` | Auto-track multiple dependencies in builder |
+| `.watch(context)` | Simple inline reactive values in any widget |
 
 ## License
 

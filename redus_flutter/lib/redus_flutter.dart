@@ -2,8 +2,10 @@
 ///
 /// This library provides:
 /// - [ReactiveWidget] - Vue-like reactive component base class with `bind()` API
+/// - [BindWidget] - Lightweight widget with bind() and lifecycle (no auto-reactivity)
 /// - [Observe] - Widget that watches a reactive source and rebuilds when it changes
 /// - [ObserveEffect] - Widget that auto-tracks reactive dependencies
+/// - [BindMixin] - Mixin for adding bind() to custom widgets
 /// - Lifecycle hooks (onMounted, onUpdated, onUnmounted, etc.)
 /// - Fine-grained reactivity with `.watch(context)` extension
 /// - Dependency injection (register, registerFactory, get) from redus package
@@ -42,6 +44,8 @@ export 'package:redus/di.dart';
 
 // Widget components
 export 'src/widget/reactive_widget.dart';
+export 'src/widget/bind_widget.dart';
+export 'src/widget/bind.dart';
 export 'src/widget/lifecycle.dart';
 export 'src/widget/observe.dart';
 export 'src/widget/observe_effect.dart';
