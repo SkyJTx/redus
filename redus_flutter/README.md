@@ -13,6 +13,7 @@ Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle 
 - ⚡ **ObserveEffect** - Widget that auto-tracks dependencies
 - 🔄 **Lifecycle Hooks** - onMounted, onUpdated, onUnmounted, etc.
 - 🧩 **Composable Mixins** - BindMixin, LifecycleHooks for custom widgets
+- 🔧 **State Mixins** - LifecycleHooksStateMixin, ReactiveProviderStateMixin for StatefulWidget
 - 💉 **Dependency Injection** - Type + key-based lookup (from `redus`)
 - 🧹 **Auto Cleanup** - Effect scopes tied to widget lifecycle
 
@@ -20,7 +21,7 @@ Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle 
 
 ```yaml
 dependencies:
-  redus_flutter: ^0.7.0
+  redus_flutter: ^0.8.0
 ```
 
 ## Quick Start
@@ -199,6 +200,39 @@ class MyWidget extends Widget with BindMixin {
   // ...
 }
 ```
+
+## State Mixins for StatefulWidget
+
+Use lifecycle hooks and reactivity with standard `StatefulWidget`:
+
+```dart
+class _MyWidgetState extends State<MyWidget>
+    with LifecycleHooksStateMixin, ReactiveProviderStateMixin {
+
+  late final count = ref(0);
+
+  @override
+  void setup() {
+    onMounted((context) => print('Mounted!'));
+    onUnmounted((context) => print('Unmounted!'));
+
+    watchEffect((onCleanup) {
+      print('Count changed: ${count.value}');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    scheduleLifecycleCallbacks();
+    return Text('Count: ${count.value}');
+  }
+}
+```
+
+**Available mixins:**
+
+- `LifecycleHooksStateMixin` - Lifecycle hooks (`onMounted`, `onUnmounted`, etc.)
+- `ReactiveProviderStateMixin` - `EffectScope` for `watchEffect()`, `watch()` with auto-cleanup
 
 ## Dependency Injection
 

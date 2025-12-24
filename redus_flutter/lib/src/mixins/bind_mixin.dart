@@ -1,4 +1,4 @@
-/// Bind - Provides bind() for state persistence across widget recreation.
+/// Bind Mixin - Provides bind() for state persistence across widget recreation.
 ///
 /// This module provides the core bind() functionality as mixins,
 /// allowing composition with other widget features like LifecycleHooks.

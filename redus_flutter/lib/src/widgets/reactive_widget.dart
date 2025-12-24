@@ -13,11 +13,8 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 import 'package:redus/reactivity.dart';
 
-import 'bind.dart';
-import 'lifecycle.dart';
-
-export 'bind.dart';
-export 'lifecycle.dart';
+import '../mixins/bind_mixin.dart';
+import '../mixins/lifecycle_mixin.dart';
 
 /// A reactive widget with Vue-like lifecycle and automatic reactivity.
 ///

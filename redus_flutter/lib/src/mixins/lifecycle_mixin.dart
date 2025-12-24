@@ -1,7 +1,7 @@
-/// Lifecycle hooks for Components.
+/// Lifecycle Mixin - Vue-like lifecycle hooks for widgets.
 ///
 /// These functions register callbacks for various lifecycle events.
-/// They must be called during [Component.setup].
+/// They must be called during setup().
 library;
 
 import 'package:flutter/widgets.dart';

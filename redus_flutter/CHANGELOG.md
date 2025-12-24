@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2025-12-24
+
+### Added
+
+- **`LifecycleHooksStateMixin`** - Vue-like lifecycle hooks for standard `State<T>` classes
+  - `onMounted`, `onBeforeUnmount`, `onUnmounted`
+  - `onActivated`, `onDeactivated`
+  - `onDependenciesChanged`, `onAfterDependenciesChanged`
+  - Works with regular `StatefulWidget`
+
+- **`ReactiveProviderStateMixin`** - EffectScope and reactivity for `State<T>` classes
+  - Provides `setup()` method for initialization
+  - Creates `EffectScope` for automatic cleanup
+  - Works with `watchEffect()`, `watch()`, `computed()`
+
+### Changed
+
+- **Code restructured** into semantic folders:
+  - `src/extensions/` - Extension methods (`.watch()`)
+  - `src/mixins/` - Mixin classes (`BindMixin`, `LifecycleHooks`, `*StateMixin`)
+  - `src/widgets/` - Widget classes (`ReactiveWidget`, `BindWidget`, `Observe`, `ObserveEffect`)
+  
+- **Barrel file imports** - All modules now have barrel files for cleaner imports
+
 ## [0.7.1] - 2025-12-23
 
 ### Fixed

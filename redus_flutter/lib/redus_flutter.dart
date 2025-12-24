@@ -6,6 +6,7 @@
 /// - [Observe] - Widget that watches a reactive source and rebuilds when it changes
 /// - [ObserveEffect] - Widget that auto-tracks reactive dependencies
 /// - [BindMixin] - Mixin for adding bind() to custom widgets
+/// - [LifecycleHooksStateMixin] and [ReactiveProviderStateMixin] for State classes
 /// - Lifecycle hooks (onMounted, onUpdated, onUnmounted, etc.)
 /// - Fine-grained reactivity with `.watch(context)` extension
 /// - Dependency injection (register, registerFactory, get) from redus package
@@ -42,14 +43,11 @@ library;
 export 'package:redus/reactivity.dart';
 export 'package:redus/di.dart';
 
-// Widget components
-export 'src/widget/reactive_widget.dart';
-export 'src/widget/bind_widget.dart';
-export 'src/widget/bind.dart';
-export 'src/widget/lifecycle.dart';
-export 'src/widget/observe.dart';
-export 'src/widget/observe_effect.dart';
+// Extensions
+export 'src/extensions/extensions.dart';
 
-// Fine-grained reactivity extensions
-export 'src/reactive/extensions.dart';
-export 'src/reactive/reactive_context.dart';
+// Mixins
+export 'src/mixins/mixins.dart';
+
+// Widgets
+export 'src/widgets/widgets.dart';

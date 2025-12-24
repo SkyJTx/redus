@@ -7,8 +7,8 @@ library;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
-import 'bind.dart';
-import 'lifecycle.dart';
+import '../mixins/bind_mixin.dart';
+import '../mixins/lifecycle_mixin.dart';
 
 /// A widget with bind() for state persistence, without reactive auto-tracking.
 ///
