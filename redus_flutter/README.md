@@ -20,7 +20,7 @@ Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle 
 
 ```yaml
 dependencies:
-  redus_flutter: ^0.10.0
+  redus_flutter: ^0.10.1
 ```
 
 ## Quick Start
@@ -92,6 +92,34 @@ class _AnimatedCounterState extends ReactiveWidgetState<AnimatedCounter>
         child: Text('Count: ${count.value}'),
       ),
     );
+  }
+}
+```
+
+#### Using with AutomaticKeepAliveClientMixin
+
+Some Flutter mixins require overriding `build()`. Use `reactiveBuild()` to get full reactive functionality:
+
+```dart
+class _KeepAliveState extends ReactiveWidgetState<KeepAliveWidget>
+    with AutomaticKeepAliveClientMixin {
+  late final count = bind(() => ref(0));
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void setup() {}
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Required for the mixin
+    return reactiveBuild(context); // Full reactive functionality!
+  }
+
+  @override
+  Widget render(BuildContext context) {
+    return Text('Count: ${count.value}');
   }
 }
 ```

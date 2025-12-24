@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.1] - 2025-12-24
+
+### Added
+
+- **`reactiveBuild(BuildContext context)`** - New helper method in `ReactiveWidgetState` that encapsulates all reactive build logic. Makes it easier to override `build()` for compatibility with Flutter mixins:
+
+  ```dart
+  class _KeepAliveState extends ReactiveWidgetState<KeepAliveWidget>
+      with AutomaticKeepAliveClientMixin {
+    
+    @override
+    bool get wantKeepAlive => true;
+
+    @override
+    Widget build(BuildContext context) {
+      super.build(context); // Required for the mixin
+      return reactiveBuild(context); // Full reactive functionality!
+    }
+
+    @override
+    Widget render(BuildContext context) {
+      return Text('Count: ${count.value}');
+    }
+  }
+  ```
+
+  The method handles:
+  - Error state checking
+  - Reactive dependency tracking via `buildReactive`
+  - Error catching and `onErrorCaptured` callback invocation
+  - Scheduling `onMounted` callbacks
+
+---
+
 ## [0.10.0] - 2025-12-24
 
 ### Added

@@ -129,6 +129,166 @@ void main() {
       // Should render without errors
       expect(find.byType(_MultiAnimationWidget), findsOneWidget);
     });
+
+    testWidgets('works with AutomaticKeepAliveClientMixin', (tester) async {
+      final logs = <String>[];
+      var disposeCount = 0;
+
+      await tester.pumpWidget(MaterialApp(
+        home: _KeepAliveListWidget(
+          logs: logs,
+          onDispose: () => disposeCount++,
+        ),
+      ));
+      await tester.pump();
+
+      // Initial state - first item should be visible and mounted
+      expect(logs, contains('mounted_0'));
+      expect(find.text('Keep Alive Item 0'), findsOneWidget);
+
+      // Scroll to the bottom to remove first item from viewport
+      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.pumpAndSettle();
+
+      // First item should NOT be disposed due to keep alive
+      expect(disposeCount, 0);
+    });
+
+    testWidgets('AutomaticKeepAliveClientMixin preserves state',
+        (tester) async {
+      await tester.pumpWidget(const MaterialApp(
+        home: _KeepAliveCounterListWidget(),
+      ));
+      await tester.pump();
+
+      // Initial state
+      expect(find.text('Count: 0'), findsOneWidget);
+
+      // Increment the counter
+      await tester.tap(find.text('Count: 0'));
+      await tester.pump();
+      expect(find.text('Count: 1'), findsOneWidget);
+
+      // Scroll away and back
+      await tester.drag(find.byType(ListView), const Offset(0, -500));
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(ListView), const Offset(0, 500));
+      await tester.pumpAndSettle();
+
+      // State should be preserved
+      expect(find.text('Count: 1'), findsOneWidget);
+    });
+
+    testWidgets('works with RestorationMixin', (tester) async {
+      final logs = <String>[];
+
+      await tester.pumpWidget(RootRestorationScope(
+        restorationId: 'root',
+        child: MaterialApp(
+          restorationScopeId: 'app',
+          home: _RestorableCounterWidget(
+            restorationId: 'counter',
+            logs: logs,
+          ),
+        ),
+      ));
+      await tester.pump();
+
+      expect(logs, contains('restoration_registered'));
+      expect(find.text('Restorable: 0'), findsOneWidget);
+    });
+
+    testWidgets('RestorationMixin preserves and restores state',
+        (tester) async {
+      final logs = <String>[];
+
+      await tester.pumpWidget(RootRestorationScope(
+        restorationId: 'root',
+        child: MaterialApp(
+          restorationScopeId: 'app',
+          home: _RestorableCounterWidget(
+            restorationId: 'counter',
+            logs: logs,
+          ),
+        ),
+      ));
+      await tester.pump();
+
+      // Initial state
+      expect(find.text('Restorable: 0'), findsOneWidget);
+
+      // Increment
+      await tester.tap(find.byType(ElevatedButton));
+      await tester.pump();
+      expect(find.text('Restorable: 1'), findsOneWidget);
+
+      // State should be restorable
+      expect(logs, contains('restoration_registered'));
+    });
+
+    testWidgets('works with WidgetsBindingObserver', (tester) async {
+      final logs = <String>[];
+
+      await tester.pumpWidget(MaterialApp(
+        home: _LifecycleObserverWidget(logs: logs),
+      ));
+      await tester.pump();
+
+      expect(logs, contains('observer_added'));
+
+      // Remove widget to trigger dispose
+      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+      await tester.pump();
+
+      expect(logs, contains('observer_removed'));
+    });
+
+    testWidgets('WidgetsBindingObserver receives app lifecycle events',
+        (tester) async {
+      final logs = <String>[];
+
+      await tester.pumpWidget(MaterialApp(
+        home: _LifecycleObserverWidget(logs: logs),
+      ));
+      await tester.pump();
+
+      // Get the state to verify observer was registered
+      final state = tester.state<_LifecycleObserverWidgetState>(
+        find.byType(_LifecycleObserverWidget),
+      );
+
+      // Simulate app lifecycle change
+      state.didChangeAppLifecycleState(AppLifecycleState.paused);
+      expect(logs, contains('lifecycle_paused'));
+
+      state.didChangeAppLifecycleState(AppLifecycleState.resumed);
+      expect(logs, contains('lifecycle_resumed'));
+    });
+
+    testWidgets('combined mixins work together', (tester) async {
+      final logs = <String>[];
+
+      await tester.pumpWidget(MaterialApp(
+        home: _CombinedMixinWidget(logs: logs),
+      ));
+      await tester.pump();
+
+      expect(logs, contains('controller_created'));
+      expect(logs, contains('observer_added'));
+      expect(find.text('Combined: 0'), findsOneWidget);
+
+      // Increment
+      await tester.tap(find.byType(ElevatedButton));
+      await tester.pump();
+      expect(find.text('Combined: 1'), findsOneWidget);
+
+      // Dispose
+      await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+      await tester.pump();
+
+      expect(logs, contains('observer_removed'));
+      expect(logs, contains('controller_disposed'));
+    });
   });
 
   group('Effect scope cleanup', () {
@@ -432,6 +592,266 @@ class _WatchEffectTestWidgetState
     return ElevatedButton(
       onPressed: () => count.value++,
       child: Text('Count: ${count.value}'),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ADDITIONAL FLUTTER MIXIN TEST WIDGETS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// AutomaticKeepAliveClientMixin Test Widget (Container)
+class _KeepAliveListWidget extends StatelessWidget {
+  final List<String> logs;
+  final VoidCallback onDispose;
+
+  const _KeepAliveListWidget({
+    required this.logs,
+    required this.onDispose,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 200,
+      child: ListView.builder(
+        itemCount: 20,
+        itemBuilder: (context, index) => SizedBox(
+          height: 100,
+          child: _KeepAliveItemWidget(
+            index: index,
+            logs: logs,
+            onDispose: onDispose,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _KeepAliveItemWidget extends ReactiveStatefulWidget {
+  final int index;
+  final List<String> logs;
+  final VoidCallback onDispose;
+
+  const _KeepAliveItemWidget({
+    required this.index,
+    required this.logs,
+    required this.onDispose,
+  });
+
+  @override
+  ReactiveWidgetState<_KeepAliveItemWidget> createState() =>
+      _KeepAliveItemWidgetState();
+}
+
+class _KeepAliveItemWidgetState
+    extends ReactiveWidgetState<_KeepAliveItemWidget>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void setup() {
+    onMounted(() => widget.logs.add('mounted_${widget.index}'));
+    onDispose(widget.onDispose);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    return reactiveBuild(context);
+  }
+
+  @override
+  Widget render(BuildContext context) {
+    return Text('Keep Alive Item ${widget.index}');
+  }
+}
+
+// AutomaticKeepAliveClientMixin Counter Test Widget
+class _KeepAliveCounterListWidget extends StatelessWidget {
+  const _KeepAliveCounterListWidget();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 200,
+      child: ListView.builder(
+        itemCount: 20,
+        itemBuilder: (context, index) => SizedBox(
+          height: 100,
+          child:
+              index == 0 ? const _KeepAliveCounterItem() : Text('Item $index'),
+        ),
+      ),
+    );
+  }
+}
+
+class _KeepAliveCounterItem extends ReactiveStatefulWidget {
+  const _KeepAliveCounterItem();
+
+  @override
+  ReactiveWidgetState<_KeepAliveCounterItem> createState() =>
+      _KeepAliveCounterItemState();
+}
+
+class _KeepAliveCounterItemState
+    extends ReactiveWidgetState<_KeepAliveCounterItem>
+    with AutomaticKeepAliveClientMixin {
+  late final count = bind(() => ref(0));
+
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void setup() {}
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+    return reactiveBuild(context);
+  }
+
+  @override
+  Widget render(BuildContext context) {
+    return GestureDetector(
+      onTap: () => count.value++,
+      child: Text('Count: ${count.value}'),
+    );
+  }
+}
+
+// RestorationMixin Test Widget
+class _RestorableCounterWidget extends ReactiveStatefulWidget {
+  final String restorationId;
+  final List<String> logs;
+
+  const _RestorableCounterWidget({
+    required this.restorationId,
+    required this.logs,
+  });
+
+  @override
+  ReactiveWidgetState<_RestorableCounterWidget> createState() =>
+      _RestorableCounterWidgetState();
+}
+
+class _RestorableCounterWidgetState
+    extends ReactiveWidgetState<_RestorableCounterWidget>
+    with RestorationMixin {
+  final RestorableInt _counter = RestorableInt(0);
+
+  @override
+  String? get restorationId => widget.restorationId;
+
+  @override
+  void restoreState(RestorationBucket? oldBucket, bool initialRestore) {
+    registerForRestoration(_counter, 'counter');
+    widget.logs.add('restoration_registered');
+  }
+
+  @override
+  void setup() {
+    onDispose(() => _counter.dispose());
+  }
+
+  @override
+  Widget render(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () => setState(() => _counter.value++),
+      child: Text('Restorable: ${_counter.value}'),
+    );
+  }
+}
+
+// WidgetsBindingObserver Test Widget
+class _LifecycleObserverWidget extends ReactiveStatefulWidget {
+  final List<String> logs;
+
+  const _LifecycleObserverWidget({required this.logs});
+
+  @override
+  ReactiveWidgetState<_LifecycleObserverWidget> createState() =>
+      _LifecycleObserverWidgetState();
+}
+
+class _LifecycleObserverWidgetState
+    extends ReactiveWidgetState<_LifecycleObserverWidget>
+    with WidgetsBindingObserver {
+  @override
+  void setup() {
+    WidgetsBinding.instance.addObserver(this);
+    widget.logs.add('observer_added');
+
+    onDispose(() {
+      WidgetsBinding.instance.removeObserver(this);
+      widget.logs.add('observer_removed');
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      widget.logs.add('lifecycle_paused');
+    } else if (state == AppLifecycleState.resumed) {
+      widget.logs.add('lifecycle_resumed');
+    }
+  }
+
+  @override
+  Widget render(BuildContext context) {
+    return const Text('Lifecycle Observer Widget');
+  }
+}
+
+// Combined Mixins Test Widget
+class _CombinedMixinWidget extends ReactiveStatefulWidget {
+  final List<String> logs;
+
+  const _CombinedMixinWidget({required this.logs});
+
+  @override
+  ReactiveWidgetState<_CombinedMixinWidget> createState() =>
+      _CombinedMixinWidgetState();
+}
+
+class _CombinedMixinWidgetState
+    extends ReactiveWidgetState<_CombinedMixinWidget>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  late final AnimationController controller;
+  late final count = bind(() => ref(0));
+
+  @override
+  void setup() {
+    controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    widget.logs.add('controller_created');
+
+    WidgetsBinding.instance.addObserver(this);
+    widget.logs.add('observer_added');
+
+    onDispose(() {
+      WidgetsBinding.instance.removeObserver(this);
+      widget.logs.add('observer_removed');
+      controller.dispose();
+      widget.logs.add('controller_disposed');
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    widget.logs.add('lifecycle_$state');
+  }
+
+  @override
+  Widget render(BuildContext context) {
+    return ElevatedButton(
+      onPressed: () => count.value++,
+      child: Text('Combined: ${count.value}'),
     );
   }
 }

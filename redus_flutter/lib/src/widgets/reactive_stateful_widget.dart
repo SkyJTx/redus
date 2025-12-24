@@ -68,8 +68,13 @@ import '../mixins/state_mixin.dart';
 ///   void setup() {}
 ///
 ///   @override
-///   Widget render(BuildContext context) {
+///   Widget build(BuildContext context) {
 ///     super.build(context); // Required for AutomaticKeepAliveClientMixin
+///     return reactiveBuild(context); // Use reactiveBuild() instead of duplicating logic
+///   }
+///
+///   @override
+///   Widget render(BuildContext context) {
 ///     return Text('Count: ${count.value}');
 ///   }
 /// }
@@ -102,6 +107,23 @@ abstract class ReactiveStatefulWidget extends StatefulWidget {
 /// class _MyWidgetState extends ReactiveWidgetState<MyWidget>
 ///     with SingleTickerProviderStateMixin {
 ///   // Now you have AnimationController support!
+/// }
+/// ```
+///
+/// ## Using with Mixins that Override build()
+///
+/// Some Flutter mixins like [AutomaticKeepAliveClientMixin] require you to
+/// override `build()` and call `super.build(context)`. In these cases, use
+/// [reactiveBuild] to get the full reactive functionality:
+///
+/// ```dart
+/// class _MyState extends ReactiveWidgetState<MyWidget>
+///     with AutomaticKeepAliveClientMixin {
+///   @override
+///   Widget build(BuildContext context) {
+///     super.build(context); // Required for the mixin
+///     return reactiveBuild(context); // Use reactiveBuild() for full functionality
+///   }
 /// }
 /// ```
 abstract class ReactiveWidgetState<T extends ReactiveStatefulWidget>
@@ -176,8 +198,26 @@ abstract class ReactiveWidgetState<T extends ReactiveStatefulWidget>
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
+  /// Performs the reactive build with full functionality.
+  ///
+  /// This method handles:
+  /// - Error state checking
+  /// - Reactive dependency tracking via [buildReactive]
+  /// - Error catching and [onErrorCaptured] callback invocation
+  /// - Scheduling [onMounted] callbacks
+  ///
+  /// Use this method when you need to override [build] for compatibility
+  /// with Flutter mixins like [AutomaticKeepAliveClientMixin]:
+  ///
+  /// ```dart
+  /// @override
+  /// Widget build(BuildContext context) {
+  ///   super.build(context); // Required for AutomaticKeepAliveClientMixin
+  ///   return reactiveBuild(context);
+  /// }
+  /// ```
+  @protected
+  Widget reactiveBuild(BuildContext context) {
     if (_error != null) {
       return ErrorWidget.withDetails(message: _error.toString());
     }
@@ -198,4 +238,7 @@ abstract class ReactiveWidgetState<T extends ReactiveStatefulWidget>
     scheduleMountedCallbackIfNeeded();
     return result;
   }
+
+  @override
+  Widget build(BuildContext context) => reactiveBuild(context);
 }
