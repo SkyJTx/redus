@@ -8,6 +8,7 @@ Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle 
 ## Features
 
 - 🎯 **ReactiveWidget** - Single-class component with auto-reactivity in `render()`
+- 🎭 **ReactiveStatefulWidget** - Reactive widget with custom State (supports Flutter mixins)
 - 👁️ **Observe** - Widget that watches a source and rebuilds
 - ⚡ **ObserveEffect** - Widget that auto-tracks dependencies
 - 🔄 **Lifecycle Hooks** - onInitState, onMounted, onDispose, etc.
@@ -19,7 +20,7 @@ Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle 
 
 ```yaml
 dependencies:
-  redus_flutter: ^0.9.0
+  redus_flutter: ^0.10.0
 ```
 
 ## Quick Start
@@ -51,6 +52,45 @@ class Counter extends ReactiveWidget {
     return ElevatedButton(
       onPressed: store.increment,
       child: Text('Count: ${store.count.value}'),
+    );
+  }
+}
+```
+
+### ReactiveStatefulWidget with Flutter Mixins
+
+When you need Flutter's built-in State mixins (for animations, keep-alive, etc.), use `ReactiveStatefulWidget`:
+
+```dart
+class AnimatedCounter extends ReactiveStatefulWidget {
+  const AnimatedCounter({super.key});
+
+  @override
+  ReactiveWidgetState<AnimatedCounter> createState() => _AnimatedCounterState();
+}
+
+class _AnimatedCounterState extends ReactiveWidgetState<AnimatedCounter>
+    with SingleTickerProviderStateMixin {
+  late final controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 300),
+  );
+  late final count = bind(() => ref(0));
+
+  @override
+  void setup() {
+    onMounted(() => controller.forward());
+    onDispose(() => controller.dispose());
+  }
+
+  @override
+  Widget render(BuildContext context) {
+    return FadeTransition(
+      opacity: controller,
+      child: ElevatedButton(
+        onPressed: () => count.value++,
+        child: Text('Count: ${count.value}'),
+      ),
     );
   }
 }
@@ -213,6 +253,7 @@ final log = get<Logger>(key: #console);
 | Widget | Use When |
 |--------|----------|
 | `ReactiveWidget` | Full component with auto-reactivity, lifecycle, stores |
+| `ReactiveStatefulWidget` | Need Flutter mixins (animations, keep-alive, etc.) |
 | `Observe<T>` | Watch specific source(s), explicit dependency |
 | `ObserveEffect` | Auto-track multiple dependencies in builder |
 | `.watch(context)` | Simple inline reactive values in any widget |

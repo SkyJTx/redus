@@ -5,6 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2025-12-24
+
+### Added
+
+- **`ReactiveStatefulWidget` and `ReactiveWidgetState<T>`** - New widget and state base class that supports Flutter's built-in State mixins:
+
+  ```dart
+  class AnimatedCounter extends ReactiveStatefulWidget {
+    @override
+    ReactiveWidgetState<AnimatedCounter> createState() => _AnimatedCounterState();
+  }
+
+  class _AnimatedCounterState extends ReactiveWidgetState<AnimatedCounter>
+      with SingleTickerProviderStateMixin {  // ✅ Flutter mixin works!
+    late final controller = AnimationController(vsync: this);
+    late final count = bind(() => ref(0));
+
+    @override
+    void setup() {
+      onMounted(() => controller.forward());
+      onDispose(() => controller.dispose());
+    }
+
+    @override
+    Widget render(BuildContext context) {
+      return Text('Count: ${count.value}');
+    }
+  }
+  ```
+
+  Supported Flutter mixins include:
+  - `SingleTickerProviderStateMixin` - For single animations
+  - `TickerProviderStateMixin` - For multiple animations
+  - `AutomaticKeepAliveClientMixin` - For keeping widget alive in lists
+  - `RestorationMixin` - For state restoration
+  - `WidgetsBindingObserver` - For app lifecycle events
+
+---
+
 ## [0.9.0] - 2025-12-24
 
 ### Changed (BREAKING)
