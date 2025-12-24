@@ -137,7 +137,7 @@ class _WatchEffectTestWidget extends ReactiveWidget {
   final VoidCallback onEffectRun;
   final VoidCallback onCleanup;
 
-  _WatchEffectTestWidget({
+  const _WatchEffectTestWidget({
     required this.trigger,
     required this.onEffectRun,
     required this.onCleanup,
@@ -165,7 +165,7 @@ class _EffectCounterWidget extends ReactiveWidget {
   final Ref<int> trigger;
   final VoidCallback onEffectRun;
 
-  _EffectCounterWidget({
+  const _EffectCounterWidget({
     required this.trigger,
     required this.onEffectRun,
   });
@@ -188,7 +188,7 @@ class _TimerEffectWidget extends ReactiveWidget {
   final Ref<bool> isLive;
   final VoidCallback onTimerFire;
 
-  _TimerEffectWidget({
+  const _TimerEffectWidget({
     required this.isLive,
     required this.onTimerFire,
   });

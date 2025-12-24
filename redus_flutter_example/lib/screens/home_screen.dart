@@ -80,7 +80,7 @@ class HomeScreen extends StatelessWidget {
         icon: Icons.loop,
         title: 'Lifecycle Hooks',
         description:
-            'onMounted, onUpdated, onUnmounted and more. Full control over component lifecycle.',
+            'onInitState, onMounted, onDispose and more. Full control over component lifecycle.',
         gradient: const [Color(0xFF00D9FF), Color(0xFF0EA5E9)],
         onTap: () => _navigateTo(context, 2),
       ),
@@ -404,7 +404,7 @@ class _PackageInfoSection extends StatelessWidget {
             child: SelectableText(
               '''// pubspec.yaml
 dependencies:
-  redus_flutter: ^0.2.0
+  redus_flutter: ^0.9.0
 
 // main.dart
 import 'package:redus_flutter/redus_flutter.dart';

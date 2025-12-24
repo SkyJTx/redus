@@ -29,7 +29,7 @@ class LifecycleScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Vue-inspired lifecycle hooks for Flutter components',
+            'Flutter-aligned lifecycle hooks with timing control',
             style: TextStyle(
               fontSize: 16,
               color: Colors.white.withValues(alpha: 0.6),
@@ -83,43 +83,43 @@ class _LifecycleTimeline extends StatelessWidget {
                     _HookBadge(
                       'setup()',
                       const Color(0xFF6C63FF),
-                      'Define hooks',
+                      'Register hooks',
                     ),
                     _ArrowIconVertical(),
                     _HookBadge(
-                      'onBeforeMount',
+                      'onInitState:before',
                       const Color(0xFF00D9FF),
-                      'Before first build',
+                      'Before super.initState',
+                    ),
+                    _ArrowIconVertical(),
+                    _HookBadge(
+                      'onInitState:after',
+                      const Color(0xFF10B981),
+                      'After super.initState',
                     ),
                     _ArrowIconVertical(),
                     _HookBadge(
                       'onMounted',
-                      const Color(0xFF10B981),
-                      'After first build',
-                    ),
-                    _ArrowIconVertical(),
-                    _HookBadge(
-                      'onBeforeUpdate',
                       const Color(0xFFF59E0B),
-                      'Before rebuild',
+                      'After first frame',
                     ),
                     _ArrowIconVertical(),
                     _HookBadge(
-                      'onUpdated',
+                      'onDidUpdateWidget',
                       const Color(0xFFEF4444),
-                      'After rebuild',
+                      'Props changed',
                     ),
                     _ArrowIconVertical(),
                     _HookBadge(
-                      'onBeforeUnmount',
+                      'onDeactivate',
                       const Color(0xFF8B5CF6),
-                      'Starting dispose',
+                      'Removed from tree',
                     ),
                     _ArrowIconVertical(),
                     _HookBadge(
-                      'onUnmounted',
+                      'onDispose',
                       const Color(0xFFEC4899),
-                      'Fully disposed',
+                      'Cleanup resources',
                     ),
                   ],
                 );
@@ -132,43 +132,37 @@ class _LifecycleTimeline extends StatelessWidget {
                   _HookBadge(
                     'setup()',
                     const Color(0xFF6C63FF),
-                    'Define hooks',
+                    'Register hooks',
                   ),
                   _ArrowIcon(),
                   _HookBadge(
-                    'onBeforeMount',
+                    'onInitState',
                     const Color(0xFF00D9FF),
-                    'Before first build',
+                    'State initialized',
                   ),
                   _ArrowIcon(),
                   _HookBadge(
                     'onMounted',
                     const Color(0xFF10B981),
-                    'After first build',
+                    'After first frame',
                   ),
                   _ArrowIcon(),
                   _HookBadge(
-                    'onBeforeUpdate',
+                    'onDidUpdateWidget',
                     const Color(0xFFF59E0B),
-                    'Before rebuild',
+                    'Props changed',
                   ),
                   _ArrowIcon(),
                   _HookBadge(
-                    'onUpdated',
-                    const Color(0xFFEF4444),
-                    'After rebuild',
-                  ),
-                  _ArrowIcon(),
-                  _HookBadge(
-                    'onBeforeUnmount',
+                    'onDeactivate',
                     const Color(0xFF8B5CF6),
-                    'Starting dispose',
+                    'Removed from tree',
                   ),
                   _ArrowIcon(),
                   _HookBadge(
-                    'onUnmounted',
+                    'onDispose',
                     const Color(0xFFEC4899),
-                    'Fully disposed',
+                    'Cleanup resources',
                   ),
                 ],
               );
@@ -541,35 +535,44 @@ class _LifecycleComponent extends ReactiveWidget {
 
   @override
   void setup() {
-    onBeforeMount((context) {
-      onLog('onBeforeMount', const Color(0xFF00D9FF));
-    });
+    // Before initState
+    onInitState(
+      () => onLog('onInitState:before', const Color(0xFF00D9FF)),
+      timing: LifecycleTiming.before,
+    );
 
-    onMounted((context) {
-      onLog('onMounted', const Color(0xFF10B981));
-    });
+    // After initState
+    onInitState(() => onLog('onInitState:after', const Color(0xFF10B981)));
 
-    onBeforeUpdate((context) {
-      onLog('onBeforeUpdate', const Color(0xFFF59E0B));
-    });
+    // After first frame
+    onMounted(() => onLog('onMounted', const Color(0xFFF59E0B)));
 
-    onUpdated((context) {
-      onLog('onUpdated', const Color(0xFFEF4444));
-    });
+    // Before/after widget update (props change)
+    onDidUpdateWidget<_LifecycleComponent>(
+      (oldWidget, newWidget) =>
+          onLog('onDidUpdateWidget:before', const Color(0xFFEF4444)),
+      timing: LifecycleTiming.before,
+    );
+    onDidUpdateWidget<_LifecycleComponent>(
+      (oldWidget, newWidget) =>
+          onLog('onDidUpdateWidget:after', const Color(0xFFEF4444)),
+    );
 
-    onBeforeUnmount((context) {
-      onLog('onBeforeUnmount', const Color(0xFF8B5CF6));
-    });
+    // Deactivate (removed from tree)
+    onDeactivate(() => onLog('onDeactivate', const Color(0xFF8B5CF6)));
 
-    onUnmounted((context) {
-      onLog('onUnmounted', const Color(0xFFEC4899));
-    });
+    // Dispose (cleanup)
+    onDispose(
+      () => onLog('onDispose:before', const Color(0xFFEC4899)),
+      timing: LifecycleTiming.before,
+    );
+    onDispose(() => onLog('onDispose:after', const Color(0xFFEC4899)));
   }
 
   @override
   Widget render(BuildContext context) {
     // Access counter.value directly here so ReactiveWidget tracks it
-    // and rebuilds when it changes, triggering onBeforeUpdate/onUpdated
+    // and rebuilds when it changes
     final currentCount = counter.value;
 
     return Center(
@@ -596,7 +599,7 @@ class _LifecycleComponent extends ReactiveWidget {
           TextButton.icon(
             onPressed: () => counter.value++,
             icon: const Icon(Icons.add, size: 18),
-            label: const Text('Increment (triggers update)'),
+            label: const Text('Increment (triggers rebuild)'),
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFF00D9FF),
             ),

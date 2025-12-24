@@ -7,7 +7,7 @@
 /// - [ObserveEffect] - Widget that auto-tracks reactive dependencies
 /// - [BindMixin] - Mixin for adding bind() to custom widgets
 /// - [LifecycleHooksStateMixin] and [ReactiveProviderStateMixin] for State classes
-/// - Lifecycle hooks (onMounted, onUpdated, onUnmounted, etc.)
+/// - Lifecycle hooks with Flutter semantics (onInitState, onDispose, etc.)
 /// - Fine-grained reactivity with `.watch(context)` extension
 /// - Dependency injection (register, registerFactory, get) from redus package
 ///
@@ -25,7 +25,8 @@
 ///
 ///   @override
 ///   void setup() {
-///     onMounted((context) => print('Mounted!'));
+///     onInitState(() => print('Initialized!'));
+///     onDispose(() => print('Disposing...'));
 ///   }
 ///
 ///   @override

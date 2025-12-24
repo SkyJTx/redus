@@ -17,8 +17,7 @@ void main() {
       expect(logs, contains('mounted'));
     });
 
-    testWidgets('onBeforeUnmount and onUnmounted fire on dispose',
-        (tester) async {
+    testWidgets('onDispose fires on dispose', (tester) async {
       final logs = <String>[];
 
       await tester.pumpWidget(
@@ -34,11 +33,11 @@ void main() {
       await tester.pumpWidget(Container());
       await tester.pumpAndSettle();
 
-      expect(logs, contains('beforeUnmount'));
-      expect(logs, contains('unmounted'));
+      expect(logs, contains('beforeDispose'));
+      expect(logs, contains('disposed'));
     });
 
-    testWidgets('onActivated and onDeactivated fire correctly', (tester) async {
+    testWidgets('onActivate and onDeactivate fire correctly', (tester) async {
       final logs = <String>[];
       final showWidget = ValueNotifier(true);
 
@@ -65,7 +64,7 @@ void main() {
       expect(logs, contains('deactivated'));
     });
 
-    testWidgets('onDependenciesChanged fires on dependency changes',
+    testWidgets('onDidChangeDependencies fires on dependency changes',
         (tester) async {
       final logs = <String>[];
       final themeMode = ValueNotifier(ThemeMode.light);
@@ -91,12 +90,12 @@ void main() {
       themeMode.value = ThemeMode.dark;
       await tester.pumpAndSettle();
 
+      expect(logs, contains('beforeDependenciesChanged'));
       expect(logs, contains('dependenciesChanged'));
-      expect(logs, contains('afterDependenciesChanged'));
     });
   });
 
-  group('ReactiveProviderStateMixin', () {
+  group('ReactiveStateMixin', () {
     testWidgets('setup is called once during initState', (tester) async {
       int setupCount = 0;
 
@@ -185,8 +184,8 @@ void main() {
       await tester.pumpWidget(Container());
       await tester.pumpAndSettle();
 
-      expect(logs, contains('beforeUnmount'));
-      expect(logs, contains('unmounted'));
+      expect(logs, contains('beforeDispose'));
+      expect(logs, contains('disposed'));
     });
   });
 }
@@ -203,20 +202,21 @@ class _LifecycleTestWidget extends StatefulWidget {
 }
 
 class _LifecycleTestWidgetState extends State<_LifecycleTestWidget>
-    with LifecycleHooksStateMixin {
+    with LifecycleCallbacks, LifecycleHooksStateMixin {
   @override
   void initState() {
     super.initState();
-    onMounted((_) => widget.logs.add('mounted'));
-    onBeforeUnmount((_) => widget.logs.add('beforeUnmount'));
-    onUnmounted((_) => widget.logs.add('unmounted'));
-    onActivated((_) => widget.logs.add('activated'));
-    onDeactivated((_) => widget.logs.add('deactivated'));
+    onMounted(() => widget.logs.add('mounted'));
+    onDispose(() => widget.logs.add('beforeDispose'),
+        timing: LifecycleTiming.before);
+    onDispose(() => widget.logs.add('disposed'));
+    onActivate(() => widget.logs.add('activated'));
+    onDeactivate(() => widget.logs.add('deactivated'));
   }
 
   @override
   Widget build(BuildContext context) {
-    scheduleLifecycleCallbacks();
+    scheduleMountedCallbackIfNeeded();
     return const Text('Lifecycle Test');
   }
 }
@@ -231,18 +231,20 @@ class _DependencyTestWidget extends StatefulWidget {
 }
 
 class _DependencyTestWidgetState extends State<_DependencyTestWidget>
-    with LifecycleHooksStateMixin {
+    with LifecycleCallbacks, LifecycleHooksStateMixin {
   @override
   void initState() {
     super.initState();
-    onDependenciesChanged((_) => widget.logs.add('dependenciesChanged'));
-    onAfterDependenciesChanged(
-        (_) => widget.logs.add('afterDependenciesChanged'));
+    onDidChangeDependencies(
+      () => widget.logs.add('beforeDependenciesChanged'),
+      timing: LifecycleTiming.before,
+    );
+    onDidChangeDependencies(() => widget.logs.add('dependenciesChanged'));
   }
 
   @override
   Widget build(BuildContext context) {
-    scheduleLifecycleCallbacks();
+    scheduleMountedCallbackIfNeeded();
     // Access theme to register dependency
     Theme.of(context);
     return const Text('Dependency Test');
@@ -259,16 +261,22 @@ class _ReactiveTestWidget extends StatefulWidget {
 }
 
 class _ReactiveTestWidgetState extends State<_ReactiveTestWidget>
-    with ReactiveProviderStateMixin {
+    with
+        LifecycleCallbacks,
+        LifecycleHooksStateMixin,
+        BindStateMixin,
+        ReactiveStateMixin {
   late final count = ref(0);
 
   @override
-  void setup() {
+  void initState() {
+    super.initState();
     widget.onSetup();
   }
 
   @override
   Widget build(BuildContext context) {
+    scheduleMountedCallbackIfNeeded();
     return ElevatedButton(
       onPressed: () => setState(() => count.value++),
       child: Text('Count: ${count.value}'),
@@ -286,20 +294,30 @@ class _EffectCleanupWidget extends StatefulWidget {
 }
 
 class _EffectCleanupWidgetState extends State<_EffectCleanupWidget>
-    with ReactiveProviderStateMixin {
+    with LifecycleCallbacks, LifecycleHooksStateMixin, ReactiveStateMixin {
   late final trigger = ref(0);
 
   @override
-  void setup() {
-    watchEffect((onCleanup) {
-      // Track the trigger
-      trigger.value;
-      onCleanup(widget.onCleanup);
+  void initState() {
+    super.initState();
+    runInScope(() {
+      watchEffect((onCleanup) {
+        // Track the trigger
+        trigger.value;
+        onCleanup(widget.onCleanup);
+      });
     });
   }
 
   @override
+  void dispose() {
+    stopReactivity();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    scheduleMountedCallbackIfNeeded();
     return const Text('Effect Cleanup Test');
   }
 }
@@ -314,18 +332,28 @@ class _WatchEffectTestWidget extends StatefulWidget {
 }
 
 class _WatchEffectTestWidgetState extends State<_WatchEffectTestWidget>
-    with ReactiveProviderStateMixin {
+    with LifecycleCallbacks, LifecycleHooksStateMixin, ReactiveStateMixin {
   late final count = ref(0);
 
   @override
-  void setup() {
-    watchEffect((onCleanup) {
-      widget.logs.add(count.value);
+  void initState() {
+    super.initState();
+    runInScope(() {
+      watchEffect((onCleanup) {
+        widget.logs.add(count.value);
+      });
     });
   }
 
   @override
+  void dispose() {
+    stopReactivity();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    scheduleMountedCallbackIfNeeded();
     return ElevatedButton(
       onPressed: () => count.value++,
       child: Text('Count: ${count.value}'),
@@ -344,25 +372,35 @@ class _CombinedMixinWidget extends StatefulWidget {
 }
 
 class _CombinedMixinWidgetState extends State<_CombinedMixinWidget>
-    with LifecycleHooksStateMixin, ReactiveProviderStateMixin {
+    with LifecycleCallbacks, LifecycleHooksStateMixin, ReactiveStateMixin {
   late final count = ref(0);
 
   @override
-  void setup() {
+  void initState() {
+    super.initState();
     widget.logs.add('setup');
 
-    onMounted((_) => widget.logs.add('mounted'));
-    onBeforeUnmount((_) => widget.logs.add('beforeUnmount'));
-    onUnmounted((_) => widget.logs.add('unmounted'));
+    onMounted(() => widget.logs.add('mounted'));
+    onDispose(() => widget.logs.add('beforeDispose'),
+        timing: LifecycleTiming.before);
+    onDispose(() => widget.logs.add('disposed'));
 
-    watchEffect((onCleanup) {
-      widget.watchLogs.add(count.value);
+    runInScope(() {
+      watchEffect((onCleanup) {
+        widget.watchLogs.add(count.value);
+      });
     });
   }
 
   @override
+  void dispose() {
+    stopReactivity();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    scheduleLifecycleCallbacks();
+    scheduleMountedCallbackIfNeeded();
     return ElevatedButton(
       onPressed: () => count.value++,
       child: Text('Count: ${count.value}'),

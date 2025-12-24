@@ -1,261 +1,212 @@
-/// Lifecycle Mixin - Vue-like lifecycle hooks for widgets.
+/// Lifecycle Mixin - Lifecycle hooks with Flutter State semantics.
 ///
-/// These functions register callbacks for various lifecycle events.
-/// They must be called during setup().
+/// Provides:
+/// - [LifecycleCallbacks] - Base mixin for callback storage and registration
+/// - [LifecycleTiming] - Timing enum for before/after hooks
+/// - Typedefs for callback functions
 library;
 
-import 'package:flutter/widgets.dart';
-import 'package:meta/meta.dart';
+/// Timing for lifecycle hooks - before or after the lifecycle method.
+enum LifecycleTiming {
+  /// Run callback before the lifecycle method executes.
+  before,
+
+  /// Run callback after the lifecycle method executes (default).
+  after,
+}
 
 /// Callback type for lifecycle hooks.
-///
-/// Receives the [BuildContext] to allow access to InheritedWidgets
-/// like MediaQuery, Theme, Navigator, etc.
-typedef LifecycleCallback = void Function(BuildContext context);
+typedef LifecycleCallback = void Function();
+
+/// Callback type for didUpdateWidget - receives oldWidget and current widget.
+typedef DidUpdateWidgetCallback<T> = void Function(T oldWidget, T widget);
 
 /// Callback type for error handling.
 typedef ErrorCallback = bool? Function(Object error, StackTrace stack);
 
-/// Debug event for render tracking.
-class RenderDebugEvent {
-  /// The type of operation that triggered the event.
-  final String type;
+/// Base mixin providing lifecycle callback storage and registration.
+///
+/// This mixin stores callbacks for all lifecycle events but does NOT
+/// automatically call them. Use [LifecycleHooksStateMixin] for State classes
+/// that automatically runs these callbacks at the correct times.
+///
+/// **Available Hooks:**
+/// - [onInitState] - Around initialization
+/// - [onMounted] - After first frame
+/// - [onDidChangeDependencies] - When inherited widgets change
+/// - [onDidUpdateWidget] - When widget configuration changes
+/// - [onDeactivate] / [onActivate] - Visibility changes
+/// - [onDispose] - Around disposal
+/// - [onReassemble] - Hot reload
+/// - [onErrorCaptured] - Error boundary
+mixin LifecycleCallbacks {
+  // ─────────────────────────────────────────────────────────────────────────
+  // Callback storage
+  // ─────────────────────────────────────────────────────────────────────────
 
-  /// The target that was tracked/triggered.
-  final Object? target;
+  final List<LifecycleCallback> _beforeInitState = [];
+  final List<LifecycleCallback> _afterInitState = [];
+  final List<LifecycleCallback> _mounted = [];
+  final List<dynamic> _beforeDidUpdateWidget = [];
+  final List<dynamic> _afterDidUpdateWidget = [];
+  final List<LifecycleCallback> _beforeDidChangeDependencies = [];
+  final List<LifecycleCallback> _afterDidChangeDependencies = [];
+  final List<LifecycleCallback> _beforeDeactivate = [];
+  final List<LifecycleCallback> _afterDeactivate = [];
+  final List<LifecycleCallback> _beforeActivate = [];
+  final List<LifecycleCallback> _afterActivate = [];
+  final List<LifecycleCallback> _beforeDispose = [];
+  final List<LifecycleCallback> _afterDispose = [];
+  final List<LifecycleCallback> _beforeReassemble = [];
+  final List<LifecycleCallback> _afterReassemble = [];
+  final List<ErrorCallback> _errorCaptured = [];
 
-  /// Creates a render debug event.
-  const RenderDebugEvent({required this.type, this.target});
-}
+  // ─────────────────────────────────────────────────────────────────────────
+  // Registration methods
+  // ─────────────────────────────────────────────────────────────────────────
 
-/// Callback type for render debugging.
-typedef RenderDebugCallback = void Function(RenderDebugEvent event);
-
-/// Mixin that provides lifecycle hook registration.
-mixin LifecycleHooks {
-  final List<LifecycleCallback> _onBeforeMountCallbacks = [];
-  final List<LifecycleCallback> _onMountedCallbacks = [];
-  final List<LifecycleCallback> _onBeforeUpdateCallbacks = [];
-  final List<LifecycleCallback> _onUpdatedCallbacks = [];
-  final List<LifecycleCallback> _onBeforeUnmountCallbacks = [];
-  final List<LifecycleCallback> _onUnmountedCallbacks = [];
-  final List<ErrorCallback> _onErrorCapturedCallbacks = [];
-  final List<RenderDebugCallback> _onRenderTrackedCallbacks = [];
-  final List<RenderDebugCallback> _onRenderTriggeredCallbacks = [];
-  final List<LifecycleCallback> _onActivatedCallbacks = [];
-  final List<LifecycleCallback> _onDeactivatedCallbacks = [];
-  final List<LifecycleCallback> _onDependenciesChangedCallbacks = [];
-  final List<LifecycleCallback> _onAfterDependenciesChangedCallbacks = [];
-
-  /// Register a callback to be called before the component mounts.
-  ///
-  /// Called before the first build, after setup() completes.
-  void onBeforeMount(LifecycleCallback callback) {
-    _onBeforeMountCallbacks.add(callback);
+  /// Register a callback for initState lifecycle.
+  void onInitState(LifecycleCallback callback,
+      {LifecycleTiming timing = LifecycleTiming.after}) {
+    (timing == LifecycleTiming.before ? _beforeInitState : _afterInitState)
+        .add(callback);
   }
 
-  /// Register a callback to be called after the component mounts.
-  ///
-  /// Called after the first build completes.
+  /// Register a callback after the first frame renders.
   void onMounted(LifecycleCallback callback) {
-    _onMountedCallbacks.add(callback);
+    _mounted.add(callback);
   }
 
-  /// Register a callback to be called before the component updates.
-  ///
-  /// Called before each rebuild (except the first).
-  void onBeforeUpdate(LifecycleCallback callback) {
-    _onBeforeUpdateCallbacks.add(callback);
+  /// Register a callback for didChangeDependencies lifecycle.
+  void onDidChangeDependencies(LifecycleCallback callback,
+      {LifecycleTiming timing = LifecycleTiming.after}) {
+    (timing == LifecycleTiming.before
+            ? _beforeDidChangeDependencies
+            : _afterDidChangeDependencies)
+        .add(callback);
   }
 
-  /// Register a callback to be called after the component updates.
-  ///
-  /// Called after each rebuild (except the first).
-  void onUpdated(LifecycleCallback callback) {
-    _onUpdatedCallbacks.add(callback);
+  /// Register a callback for didUpdateWidget lifecycle.
+  void onDidUpdateWidget<T>(DidUpdateWidgetCallback<T> callback,
+      {LifecycleTiming timing = LifecycleTiming.after}) {
+    (timing == LifecycleTiming.before
+            ? _beforeDidUpdateWidget
+            : _afterDidUpdateWidget)
+        .add(callback);
   }
 
-  /// Register a callback to be called before the component unmounts.
-  ///
-  /// Called at the start of dispose.
-  void onBeforeUnmount(LifecycleCallback callback) {
-    _onBeforeUnmountCallbacks.add(callback);
+  /// Register a callback for deactivate lifecycle.
+  void onDeactivate(LifecycleCallback callback,
+      {LifecycleTiming timing = LifecycleTiming.after}) {
+    (timing == LifecycleTiming.before ? _beforeDeactivate : _afterDeactivate)
+        .add(callback);
   }
 
-  /// Register a callback to be called after the component unmounts.
-  ///
-  /// Called at the end of dispose.
-  void onUnmounted(LifecycleCallback callback) {
-    _onUnmountedCallbacks.add(callback);
+  /// Register a callback for activate lifecycle.
+  void onActivate(LifecycleCallback callback,
+      {LifecycleTiming timing = LifecycleTiming.after}) {
+    (timing == LifecycleTiming.before ? _beforeActivate : _afterActivate)
+        .add(callback);
   }
 
-  /// Register a callback to capture errors from descendants.
-  ///
-  /// Return true to prevent the error from propagating.
+  /// Register a callback for dispose lifecycle.
+  void onDispose(LifecycleCallback callback,
+      {LifecycleTiming timing = LifecycleTiming.before}) {
+    (timing == LifecycleTiming.before ? _beforeDispose : _afterDispose)
+        .add(callback);
+  }
+
+  /// Register a callback for reassemble lifecycle (hot reload).
+  void onReassemble(LifecycleCallback callback,
+      {LifecycleTiming timing = LifecycleTiming.after}) {
+    (timing == LifecycleTiming.before ? _beforeReassemble : _afterReassemble)
+        .add(callback);
+  }
+
+  /// Register an error handler.
   void onErrorCaptured(ErrorCallback callback) {
-    _onErrorCapturedCallbacks.add(callback);
+    _errorCaptured.add(callback);
   }
 
-  /// Register a debug callback called when a dependency is tracked.
-  ///
-  /// Development mode only.
-  void onRenderTracked(RenderDebugCallback callback) {
-    _onRenderTrackedCallbacks.add(callback);
-  }
+  // ─────────────────────────────────────────────────────────────────────────
+  // Internal: Run callbacks (for State mixins to call)
+  // ─────────────────────────────────────────────────────────────────────────
 
-  /// Register a debug callback called when a re-render is triggered.
-  ///
-  /// Development mode only.
-  void onRenderTriggered(RenderDebugCallback callback) {
-    _onRenderTriggeredCallbacks.add(callback);
-  }
-
-  /// Register a callback called when the component is activated.
-  ///
-  /// Called when route becomes visible or component is restored.
-  void onActivated(LifecycleCallback callback) {
-    _onActivatedCallbacks.add(callback);
-  }
-
-  /// Register a callback called when the component is deactivated.
-  ///
-  /// Called when route becomes hidden or component is cached.
-  void onDeactivated(LifecycleCallback callback) {
-    _onDeactivatedCallbacks.add(callback);
-  }
-
-  /// Register a callback called when InheritedWidget dependencies change.
-  ///
-  /// Called when MediaQuery, Theme, Locale, or other InheritedWidgets change.
-  /// This is triggered before processing the change.
-  ///
-  /// Note: NOT called on initial mount. Use [onMounted] for initial setup.
-  void onDependenciesChanged(LifecycleCallback callback) {
-    _onDependenciesChangedCallbacks.add(callback);
-  }
-
-  /// Register a callback called after InheritedWidget dependencies change.
-  ///
-  /// Called after processing the change from MediaQuery, Theme, Locale, etc.
-  ///
-  /// Note: NOT called on initial mount. Use [onMounted] for initial setup.
-  void onAfterDependenciesChanged(LifecycleCallback callback) {
-    _onAfterDependenciesChangedCallbacks.add(callback);
-  }
-
-  // Internal: Execute callbacks - @internal prevents public use while allowing package access
-  @internal
-  void runBeforeMount(BuildContext context) {
-    for (final cb in _onBeforeMountCallbacks) {
-      cb(context);
+  /// Run initState callbacks.
+  void runInitStateCallbacks(LifecycleTiming timing) {
+    for (final cb in timing == LifecycleTiming.before
+        ? _beforeInitState
+        : _afterInitState) {
+      cb();
     }
   }
 
-  @internal
-  void runMounted(BuildContext context) {
-    for (final cb in _onMountedCallbacks) {
-      cb(context);
+  /// Run mounted callbacks.
+  void runMountedCallbacks() {
+    for (final cb in _mounted) {
+      cb();
     }
   }
 
-  @internal
-  void runBeforeUpdate(BuildContext context) {
-    for (final cb in _onBeforeUpdateCallbacks) {
-      cb(context);
+  /// Run didChangeDependencies callbacks.
+  void runDidChangeDependenciesCallbacks(LifecycleTiming timing) {
+    for (final cb in timing == LifecycleTiming.before
+        ? _beforeDidChangeDependencies
+        : _afterDidChangeDependencies) {
+      cb();
     }
   }
 
-  @internal
-  void runUpdated(BuildContext context) {
-    for (final cb in _onUpdatedCallbacks) {
-      cb(context);
+  /// Run didUpdateWidget callbacks.
+  void runDidUpdateWidgetCallbacks<T>(
+      LifecycleTiming timing, T oldWidget, T widget) {
+    for (final cb in timing == LifecycleTiming.before
+        ? _beforeDidUpdateWidget
+        : _afterDidUpdateWidget) {
+      (cb as Function)(oldWidget, widget);
     }
   }
 
-  @internal
-  void runBeforeUnmount(BuildContext context) {
-    for (final cb in _onBeforeUnmountCallbacks) {
-      cb(context);
+  /// Run deactivate callbacks.
+  void runDeactivateCallbacks(LifecycleTiming timing) {
+    for (final cb in timing == LifecycleTiming.before
+        ? _beforeDeactivate
+        : _afterDeactivate) {
+      cb();
     }
   }
 
-  @internal
-  void runUnmounted(BuildContext context) {
-    for (final cb in _onUnmountedCallbacks) {
-      cb(context);
+  /// Run activate callbacks.
+  void runActivateCallbacks(LifecycleTiming timing) {
+    for (final cb in timing == LifecycleTiming.before
+        ? _beforeActivate
+        : _afterActivate) {
+      cb();
     }
   }
 
-  @internal
-  bool runErrorCaptured(Object error, StackTrace stack) {
-    for (final cb in _onErrorCapturedCallbacks) {
-      if (cb(error, stack) == true) {
-        return true; // Error handled
-      }
+  /// Run dispose callbacks.
+  void runDisposeCallbacks(LifecycleTiming timing) {
+    for (final cb
+        in timing == LifecycleTiming.before ? _beforeDispose : _afterDispose) {
+      cb();
+    }
+  }
+
+  /// Run reassemble callbacks.
+  void runReassembleCallbacks(LifecycleTiming timing) {
+    for (final cb in timing == LifecycleTiming.before
+        ? _beforeReassemble
+        : _afterReassemble) {
+      cb();
+    }
+  }
+
+  /// Run error callbacks.
+  bool runErrorCapturedCallbacks(Object error, StackTrace stack) {
+    for (final cb in _errorCaptured) {
+      if (cb(error, stack) == true) return true;
     }
     return false;
-  }
-
-  @internal
-  void runRenderTracked(RenderDebugEvent event) {
-    for (final cb in _onRenderTrackedCallbacks) {
-      cb(event);
-    }
-  }
-
-  @internal
-  void runRenderTriggered(RenderDebugEvent event) {
-    for (final cb in _onRenderTriggeredCallbacks) {
-      cb(event);
-    }
-  }
-
-  @internal
-  void runActivated(BuildContext context) {
-    for (final cb in _onActivatedCallbacks) {
-      cb(context);
-    }
-  }
-
-  @internal
-  void runDeactivated(BuildContext context) {
-    for (final cb in _onDeactivatedCallbacks) {
-      cb(context);
-    }
-  }
-
-  @internal
-  void runDependenciesChanged(BuildContext context) {
-    for (final cb in _onDependenciesChangedCallbacks) {
-      cb(context);
-    }
-  }
-
-  @internal
-  void runAfterDependenciesChanged(BuildContext context) {
-    for (final cb in _onAfterDependenciesChangedCallbacks) {
-      cb(context);
-    }
-  }
-
-  /// Clear all lifecycle callbacks.
-  ///
-  /// Called when element unmounts to prevent callback accumulation
-  /// when widget instance is reused.
-  @internal
-  void clearLifecycleCallbacks() {
-    _onBeforeMountCallbacks.clear();
-    _onMountedCallbacks.clear();
-    _onBeforeUpdateCallbacks.clear();
-    _onUpdatedCallbacks.clear();
-    _onBeforeUnmountCallbacks.clear();
-    _onUnmountedCallbacks.clear();
-    _onErrorCapturedCallbacks.clear();
-    _onRenderTrackedCallbacks.clear();
-    _onRenderTriggeredCallbacks.clear();
-    _onActivatedCallbacks.clear();
-    _onDeactivatedCallbacks.clear();
-    _onDependenciesChangedCallbacks.clear();
-    _onAfterDependenciesChangedCallbacks.clear();
   }
 }

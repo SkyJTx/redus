@@ -5,6 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2025-12-24
+
+### Changed (BREAKING)
+
+- **Lifecycle hooks simplified** - Removed `(context)` parameter from lifecycle callbacks for cleaner API:
+
+  ```dart
+  // Before
+  onMounted((context) => print('Mounted!'));
+  
+  // After
+  onMounted(() => print('Mounted!'));
+  ```
+
+- **Lifecycle hook names changed** to match Flutter semantics:
+
+  | Old Name | New Name |
+  |----------|----------|
+  | `onBeforeMount` | `onInitState` with `timing: before` |
+  | `onBeforeUpdate` | `onDidUpdateWidget` with `timing: before` |
+  | `onUpdated` | `onDidUpdateWidget` with `timing: after` |
+  | `onBeforeUnmount` | `onDispose` with `timing: before` |
+  | `onUnmounted` | `onDispose` with `timing: after` |
+  | `onActivated` | `onActivate` |
+  | `onDeactivated` | `onDeactivate` |
+  | `onDependenciesChanged` | `onDidChangeDependencies` |
+
+- **`ReactiveWidget` now uses `StatefulWidget`** internally:
+  - State and lifecycle managed by `State` class internally
+  - Developer API unchanged: `setup()`, `render(BuildContext)`, `bind()`, lifecycle hooks
+  - More robust lifecycle handling, especially across parent rebuilds
+
+### Removed
+
+- **`BindWidget` removed** - Use `ReactiveWidget` with `Observe`/`ObserveEffect` for explicit reactivity control
+
+### Added
+
+- **Timing control for lifecycle hooks** - All hooks support `timing` parameter:
+
+  ```dart
+  onInitState(() => print('before'), timing: LifecycleTiming.before);
+  onInitState(() => print('after')); // default: after
+  ```
+
+- **`onDidUpdateWidget` receives old and new widget**:
+
+  ```dart
+  onDidUpdateWidget<MyWidget>((oldWidget, newWidget) {
+    if (oldWidget.value != newWidget.value) {
+      // Handle prop change
+    }
+  });
+  ```
+
+- **Consolidated mixins architecture**:
+  - `LifecycleCallbacks` - Callback storage and registration
+  - `LifecycleHooksStateMixin` - Flutter lifecycle method overrides
+  - `BindStateMixin` - State persistence via `bind()`
+  - `ReactiveStateMixin` - Reactivity and effect scope
+
+---
+
 ## [0.8.0] - 2025-12-24
 
 ### Added

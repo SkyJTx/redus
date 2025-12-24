@@ -1,50 +1,27 @@
-/// ReactiveWidget - A single-class reactive component with custom Element.
+/// ReactiveWidget - A stateful reactive component with lifecycle hooks.
 ///
-/// Provides Vue-like reactive state and lifecycle hooks with fine-grained
-/// reactivity using custom ReactiveElement.
-///
-/// Composed of:
-/// - [BindMixin] for state persistence via bind()
-/// - [LifecycleHooks] for lifecycle callbacks
-/// - Automatic reactive dependency tracking in render()
+/// Uses State for storage while keeping the original widget-centric API.
 library;
 
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
-import 'package:redus/reactivity.dart';
 
-import '../mixins/bind_mixin.dart';
 import '../mixins/lifecycle_mixin.dart';
+import '../mixins/state_mixin.dart';
 
-/// A reactive widget with Vue-like lifecycle and automatic reactivity.
-///
-/// ReactiveWidget is a single-class component where state lives on
-/// the Element (not Widget), solving Flutter's widget recreation issue.
-///
-/// **Key Features:**
-/// - State persists across parent rebuilds (via [BindMixin])
-/// - Fine-grained reactivity via `markNeedsBuild()`
-/// - Vue-like lifecycle hooks (via [LifecycleHooks])
-/// - Automatic reactive dependency tracking in render()
-///
-/// **Composition:**
-/// ReactiveWidget = BindMixin + LifecycleHooks + auto-reactivity
-///
-/// For a simpler widget without auto-reactivity, see [BindWidget].
+/// Expando to link ReactiveWidget instances to their ReactiveState.
+final Expando<ReactiveState> _stateExpando = Expando('ReactiveState');
+
+/// A reactive widget with lifecycle hooks and automatic reactivity.
 ///
 /// **Example:**
 /// ```dart
-/// class CounterStore {
-///   final count = ref(0);
-///   void increment() => count.value++;
-/// }
-///
 /// class Counter extends ReactiveWidget {
 ///   late final store = bind(() => CounterStore());
 ///
 ///   @override
 ///   void setup() {
-///     onMounted((context) => print('Mounted with count: ${store.count.value}'));
+///     onInitState(() => print('Count: ${store.count.value}'));
+///     onDispose(() => print('Disposing...'));
 ///   }
 ///
 ///   @override
@@ -56,92 +33,119 @@ import '../mixins/lifecycle_mixin.dart';
 ///   }
 /// }
 /// ```
-abstract class ReactiveWidget extends Widget with BindMixin, LifecycleHooks {
+abstract class ReactiveWidget extends StatefulWidget {
   /// Creates a reactive widget.
-  ReactiveWidget({super.key});
+  const ReactiveWidget({super.key});
 
-  /// Called once when the Element is mounted.
+  /// The [BuildContext] for this widget.
+  BuildContext get context {
+    final state = _stateExpando[this];
+    assert(state != null && state.mounted,
+        'Cannot access context before mount or after dispose.');
+    return state!.context;
+  }
+
+  /// Whether this widget is currently mounted.
+  bool get mounted => _stateExpando[this]?.mounted ?? false;
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // bind() API - delegates to State storage
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Create or retrieve state that persists across parent rebuilds.
+  T bind<T>(T Function() create) {
+    final state = _stateExpando[this];
+    assert(state != null, 'bind() can only be called after element is created');
+    return state!.bind(create);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Lifecycle hooks - delegate to State
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Register a callback for initState lifecycle.
+  void onInitState(LifecycleCallback callback,
+      {LifecycleTiming timing = LifecycleTiming.after}) {
+    _stateExpando[this]?.onInitState(callback, timing: timing);
+  }
+
+  /// Register a callback after the first frame renders.
+  void onMounted(LifecycleCallback callback) {
+    _stateExpando[this]?.onMounted(callback);
+  }
+
+  /// Register a callback for didChangeDependencies lifecycle.
+  void onDidChangeDependencies(LifecycleCallback callback,
+      {LifecycleTiming timing = LifecycleTiming.after}) {
+    _stateExpando[this]?.onDidChangeDependencies(callback, timing: timing);
+  }
+
+  /// Register a callback for didUpdateWidget lifecycle.
+  void onDidUpdateWidget<T>(DidUpdateWidgetCallback<T> callback,
+      {LifecycleTiming timing = LifecycleTiming.after}) {
+    _stateExpando[this]?.onDidUpdateWidget(callback, timing: timing);
+  }
+
+  /// Register a callback for deactivate lifecycle.
+  void onDeactivate(LifecycleCallback callback,
+      {LifecycleTiming timing = LifecycleTiming.after}) {
+    _stateExpando[this]?.onDeactivate(callback, timing: timing);
+  }
+
+  /// Register a callback for activate lifecycle.
+  void onActivate(LifecycleCallback callback,
+      {LifecycleTiming timing = LifecycleTiming.after}) {
+    _stateExpando[this]?.onActivate(callback, timing: timing);
+  }
+
+  /// Register a callback for dispose lifecycle.
+  void onDispose(LifecycleCallback callback,
+      {LifecycleTiming timing = LifecycleTiming.before}) {
+    _stateExpando[this]?.onDispose(callback, timing: timing);
+  }
+
+  /// Register an error handler.
+  void onErrorCaptured(ErrorCallback callback) {
+    _stateExpando[this]?.onErrorCaptured(callback);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Abstract methods for subclasses
+  // ─────────────────────────────────────────────────────────────────────────
+
+  /// Called once when the widget is first created.
   ///
-  /// Use this to:
-  /// - Register lifecycle hooks with [onMounted], [onUnmounted], etc.
-  /// - Set up watchers with [watchEffect], [watch], etc.
-  ///
-  /// Note: State is declared using [bind] on the class body.
+  /// Use this to register lifecycle hooks and set up watchers.
   void setup();
 
   /// Build the UI for this widget.
   ///
-  /// **Automatic Reactivity**: Any reactive values (Ref, Computed) accessed
-  /// here are automatically tracked. The widget rebuilds when they change.
+  /// **Automatic Reactivity**: Any reactive values accessed here are
+  /// automatically tracked. The widget rebuilds when they change.
   Widget render(BuildContext context);
 
   @override
-  ReactiveElement createElement() => ReactiveElement(this);
+  State<ReactiveWidget> createState() => ReactiveState();
 }
 
-/// Element that manages ReactiveWidget lifecycle and state storage.
-///
-/// Extends [BindableElement] for state persistence and adds:
-/// - EffectScope for cleanup
-/// - ReactiveEffect for automatic dependency tracking
-/// - Error boundary support
-class ReactiveElement extends BindableElement {
-  late EffectScope _scope;
-  late ReactiveEffect _renderEffect;
-  bool _isFirstBuild = true;
-  bool _isRendering = false;
-  bool _dependenciesInitialized = false;
+/// State class for ReactiveWidget.
+class ReactiveState extends State<ReactiveWidget>
+    with
+        LifecycleCallbacks,
+        LifecycleHooksStateMixin,
+        BindStateMixin,
+        ReactiveStateMixin {
   Object? _error;
 
-  /// Creates a ReactiveElement for the given ReactiveWidget.
-  ReactiveElement(ReactiveWidget super.widget);
-
-  /// The associated ReactiveWidget.
-  ReactiveWidget get reactiveWidget => widget as ReactiveWidget;
-
   @override
-  void didChangeDependencies() {
-    // Skip first call (during mount) - use onMounted for initial setup
-    if (!_dependenciesInitialized) {
-      _dependenciesInitialized = true;
-      super.didChangeDependencies();
-      return;
-    }
+  void initState() {
+    _stateExpando[widget] = this;
 
-    // Run before hook
-    reactiveWidget.runDependenciesChanged(this);
-
-    super.didChangeDependencies();
-
-    // Run after hook
-    reactiveWidget.runAfterDependenciesChanged(this);
-  }
-
-  @override
-  void mount(Element? parent, Object? newSlot) {
-    // Link widget to this element
-    bindExpando[reactiveWidget] = this;
-    resetBindIndex(reactiveWidget);
-
-    // Create effect scope for cleanup
-    _scope = effectScope();
-
-    // Create render effect for reactive tracking
-    _renderEffect = ReactiveEffect(
-      () {
-        if (mounted && !_isFirstBuild && !_isRendering) {
-          markNeedsBuild(); // Fine-grained rebuild!
-        }
-      },
-      flush: FlushMode.sync,
-    );
-
-    // Run setup within scope
-    _scope.run(() {
+    runInScope(() {
       try {
-        reactiveWidget.setup();
+        widget.setup();
       } catch (e, stack) {
-        if (reactiveWidget.runErrorCaptured(e, stack)) {
+        if (runErrorCapturedCallbacks(e, stack)) {
           _error = e;
         } else {
           rethrow;
@@ -149,118 +153,54 @@ class ReactiveElement extends BindableElement {
       }
     });
 
-    // Before mount hook
-    reactiveWidget.runBeforeMount(this);
-
-    super.mount(parent, newSlot);
+    super.initState();
   }
 
   @override
-  Widget build() {
-    // Re-link widget to element (widget may be new instance after parent rebuild)
-    bindExpando[reactiveWidget] = this;
-    resetBindIndexIfNeeded(reactiveWidget);
-
-    // Handle error state
-    if (_error != null) {
-      return _buildError();
+  void didUpdateWidget(covariant ReactiveWidget oldWidget) {
+    _stateExpando[oldWidget] = null;
+    _stateExpando[widget] = this;
+    super.didUpdateWidget(oldWidget);
+    if (!identical(widget, oldWidget)) {
+      resetBindIndex();
     }
-
-    Widget? result;
-    _isRendering = true;
-
-    // Track dependencies during render
-    effectStack.add(_renderEffect);
-    final previousEffect = activeEffect;
-    activeEffect = _renderEffect;
-
-    try {
-      _scope.run(() {
-        try {
-          result = reactiveWidget.render(this);
-        } catch (e, stack) {
-          if (reactiveWidget.runErrorCaptured(e, stack)) {
-            _error = e;
-            result = _buildError();
-          } else {
-            rethrow;
-          }
-        }
-      });
-    } finally {
-      effectStack.removeLast();
-      activeEffect = effectStack.isEmpty ? null : effectStack.last;
-      if (previousEffect != null && effectStack.contains(previousEffect)) {
-        activeEffect = previousEffect;
-      }
-      _isRendering = false;
-    }
-
-    // Schedule lifecycle callbacks
-    if (_isFirstBuild) {
-      _isFirstBuild = false;
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          reactiveWidget.runMounted(this);
-        }
-      });
-    } else {
-      SchedulerBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          reactiveWidget.runUpdated(this);
-        }
-      });
-    }
-
-    return result ?? const SizedBox.shrink();
-  }
-
-  Widget _buildError() {
-    return ErrorWidget.withDetails(
-      message: _error.toString(),
-      error: _error is FlutterError ? _error as FlutterError : null,
-    );
-  }
-
-  @override
-  void update(covariant ReactiveWidget newWidget) {
-    // Before update hook (on old widget)
-    reactiveWidget.runBeforeUpdate(this);
-
-    // Clear old widget's expando reference
-    bindExpando[reactiveWidget] = null;
-
-    // Link new widget to this element
-    bindExpando[newWidget] = this;
-
-    super.update(newWidget);
-
-    // Force rebuild to ensure render() uses the new widget's props
-    rebuild(force: true);
   }
 
   @override
   void activate() {
     super.activate();
-    bindExpando[reactiveWidget] = this;
-    reactiveWidget.runActivated(this);
+    _stateExpando[widget] = this;
   }
 
   @override
-  void deactivate() {
-    reactiveWidget.runDeactivated(this);
-    super.deactivate();
+  void dispose() {
+    stopReactivity();
+    _stateExpando[widget] = null;
+    super.dispose();
   }
 
   @override
-  void unmount() {
-    reactiveWidget.runBeforeUnmount(this);
-    _renderEffect.stop();
-    _scope.stop();
-    reactiveWidget.runUnmounted(this);
-    // Clear callbacks to prevent accumulation if widget instance is reused
-    reactiveWidget.clearLifecycleCallbacks();
-    bindExpando[reactiveWidget] = null;
-    super.unmount();
+  Widget build(BuildContext context) {
+    _stateExpando[widget] = this;
+
+    if (_error != null) {
+      return ErrorWidget.withDetails(message: _error.toString());
+    }
+
+    final result = buildReactive(context, () {
+      try {
+        return widget.render(context);
+      } catch (e, stack) {
+        if (runErrorCapturedCallbacks(e, stack)) {
+          _error = e;
+          return ErrorWidget.withDetails(message: _error.toString());
+        } else {
+          rethrow;
+        }
+      }
+    });
+
+    scheduleMountedCallbackIfNeeded();
+    return result;
   }
 }

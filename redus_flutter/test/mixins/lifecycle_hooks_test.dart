@@ -16,8 +16,8 @@ void main() {
 
       // Should have mounted but not dependency changed
       expect(logs, contains('mounted'));
+      expect(logs, isNot(contains('beforeDependenciesChanged')));
       expect(logs, isNot(contains('dependenciesChanged')));
-      expect(logs, isNot(contains('afterDependenciesChanged')));
     });
 
     testWidgets('hooks registered correctly and callbacks list is populated',
@@ -47,13 +47,16 @@ void main() {
 class _DependencyTestWidget extends ReactiveWidget {
   final List<String> logs;
 
-  _DependencyTestWidget({required this.logs});
+  const _DependencyTestWidget({required this.logs});
 
   @override
   void setup() {
-    onMounted((_) => logs.add('mounted'));
-    onDependenciesChanged((_) => logs.add('dependenciesChanged'));
-    onAfterDependenciesChanged((_) => logs.add('afterDependenciesChanged'));
+    onMounted(() => logs.add('mounted'));
+    onDidChangeDependencies(
+      () => logs.add('beforeDependenciesChanged'),
+      timing: LifecycleTiming.before,
+    );
+    onDidChangeDependencies(() => logs.add('dependenciesChanged'));
   }
 
   @override
@@ -67,16 +70,19 @@ class _SimpleHookTestWidget extends ReactiveWidget {
   final List<String> logs;
   final VoidCallback onCallbackRegistered;
 
-  _SimpleHookTestWidget({
+  const _SimpleHookTestWidget({
     required this.logs,
     required this.onCallbackRegistered,
   });
 
   @override
   void setup() {
-    onMounted((_) => logs.add('mounted'));
-    onDependenciesChanged((_) => logs.add('dependenciesChanged'));
-    onAfterDependenciesChanged((_) => logs.add('afterDependenciesChanged'));
+    onMounted(() => logs.add('mounted'));
+    onDidChangeDependencies(
+      () => logs.add('beforeDependenciesChanged'),
+      timing: LifecycleTiming.before,
+    );
+    onDidChangeDependencies(() => logs.add('dependenciesChanged'));
     onCallbackRegistered();
   }
 

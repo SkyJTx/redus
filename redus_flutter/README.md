@@ -7,13 +7,11 @@ Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle 
 
 ## Features
 
-- 🎯 **ReactiveWidget** - Single-class component with state on Element and auto-reactivity
-- 🔗 **BindWidget** - Lightweight widget with bind() and lifecycle (no auto-reactivity)
+- 🎯 **ReactiveWidget** - Single-class component with auto-reactivity in `render()`
 - 👁️ **Observe** - Widget that watches a source and rebuilds
 - ⚡ **ObserveEffect** - Widget that auto-tracks dependencies
-- 🔄 **Lifecycle Hooks** - onMounted, onUpdated, onUnmounted, etc.
-- 🧩 **Composable Mixins** - BindMixin, LifecycleHooks for custom widgets
-- 🔧 **State Mixins** - LifecycleHooksStateMixin, ReactiveProviderStateMixin for StatefulWidget
+- 🔄 **Lifecycle Hooks** - onInitState, onMounted, onDispose, etc.
+- 🧩 **Composable Mixins** - LifecycleCallbacks, BindStateMixin for custom widgets
 - 💉 **Dependency Injection** - Type + key-based lookup (from `redus`)
 - 🧹 **Auto Cleanup** - Effect scopes tied to widget lifecycle
 
@@ -21,7 +19,7 @@ Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle 
 
 ```yaml
 dependencies:
-  redus_flutter: ^0.8.0
+  redus_flutter: ^0.9.0
 ```
 
 ## Quick Start
@@ -43,7 +41,8 @@ class Counter extends ReactiveWidget {
 
   @override
   void setup() {
-    onMounted((context) => print('Count: ${store.count.value}'));
+    onMounted(() => print('Count: ${store.count.value}'));
+    onDispose(() => print('Cleaning up...'));
   }
 
   @override
@@ -52,33 +51,6 @@ class Counter extends ReactiveWidget {
     return ElevatedButton(
       onPressed: store.increment,
       child: Text('Count: ${store.count.value}'),
-    );
-  }
-}
-```
-
-### BindWidget (Explicit Reactivity)
-
-Lightweight widget with `bind()` and lifecycle, but **no auto-reactivity**. Use `Observe`/`ObserveEffect` for reactive parts:
-
-```dart
-class Counter extends BindWidget {
-  late final count = bind(() => ref(0));
-
-  @override
-  void setup() {
-    onMounted((_) => print('Mounted!'));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Use Observe for reactive parts
-    return Observe<int>(
-      source: count.call,
-      builder: (_, value) => ElevatedButton(
-        onPressed: () => count.value++,
-        child: Text('Count: $value'),
-      ),
     );
   }
 }
@@ -147,39 +119,39 @@ class MyStatelessWidget extends StatelessWidget {
 
 ## Lifecycle Hooks
 
-| Hook | When |
-|------|------|
-| `onMounted` | After first build |
-| `onUpdated` | After rebuild |
-| `onUnmounted` | After dispose |
-| `onBeforeMount` | Before first build |
-| `onBeforeUpdate` | Before rebuild |
-| `onBeforeUnmount` | Before dispose |
-| `onDependenciesChanged` | When InheritedWidget deps change |
-| `onAfterDependenciesChanged` | After processing dep changes |
-| `onErrorCaptured` | Error boundary |
-| `onActivated` | Widget activated |
-| `onDeactivated` | Widget deactivated |
+| Hook | When | Default Timing |
+|------|------|----------------|
+| `onInitState` | During initState | after |
+| `onMounted` | After first frame | - |
+| `onDidChangeDependencies` | When InheritedWidget deps change | after |
+| `onDidUpdateWidget` | When widget props change | after |
+| `onDeactivate` | Widget removed from tree | after |
+| `onActivate` | Widget reinserted into tree | after |
+| `onDispose` | Widget disposed | before |
+| `onErrorCaptured` | Error boundary | - |
 
-All lifecycle callbacks receive `BuildContext` as a parameter, allowing access to InheritedWidgets:
+### Timing Control
+
+All hooks support `timing` parameter for before/after control:
 
 ```dart
 @override
 void setup() {
-  onMounted((context) {
-    final theme = Theme.of(context);
-    final size = MediaQuery.of(context).size;
-    print('Mounted with screen width: ${size.width}');
-  });
-
-  onDependenciesChanged((context) {
-    // React to theme, locale, or media query changes
-    final brightness = Theme.of(context).brightness;
-    print('Theme changed to: $brightness');
-  });
+  // Fire before super.initState()
+  onInitState(() => print('before'), timing: LifecycleTiming.before);
   
-  // Use underscore if context not needed
-  onUpdated((_) => print('Widget updated'));
+  // Fire after super.initState() (default)
+  onInitState(() => print('after'));
+  
+  // Fire before dispose (default for onDispose)
+  onDispose(() => cleanup(), timing: LifecycleTiming.before);
+  
+  // Access old and new widget
+  onDidUpdateWidget<MyWidget>((oldWidget, newWidget) {
+    if (oldWidget.value != newWidget.value) {
+      print('Value changed!');
+    }
+  });
 }
 ```
 
@@ -188,51 +160,38 @@ void setup() {
 The library uses a composable mixin architecture:
 
 ```dart
-// ReactiveWidget = BindMixin + LifecycleHooks + auto-reactivity
-abstract class ReactiveWidget extends Widget with BindMixin, LifecycleHooks { ... }
+// ReactiveWidget uses State-based mixins internally
+class ReactiveState extends State<ReactiveWidget>
+    with LifecycleCallbacks, LifecycleHooksStateMixin, 
+         BindStateMixin, ReactiveStateMixin { ... }
 
-// BindWidget = BindMixin + LifecycleHooks (no auto-reactivity)
-abstract class BindWidget extends Widget with BindMixin, LifecycleHooks { ... }
-
-// Custom widget with just bind()
-class MyWidget extends Widget with BindMixin {
-  late final state = bind(() => MyState());
-  // ...
-}
-```
-
-## State Mixins for StatefulWidget
-
-Use lifecycle hooks and reactivity with standard `StatefulWidget`:
-
-```dart
+// Use mixins in your own StatefulWidget
 class _MyWidgetState extends State<MyWidget>
-    with LifecycleHooksStateMixin, ReactiveProviderStateMixin {
-
-  late final count = ref(0);
-
+    with LifecycleCallbacks, LifecycleHooksStateMixin, BindStateMixin {
+  
+  late final store = bind(() => MyStore());
+  
   @override
-  void setup() {
-    onMounted((context) => print('Mounted!'));
-    onUnmounted((context) => print('Unmounted!'));
-
-    watchEffect((onCleanup) {
-      print('Count changed: ${count.value}');
-    });
+  void initState() {
+    onMounted(() => print('Mounted!'));
+    onDispose(() => print('Disposing...'));
+    super.initState();
   }
-
+  
   @override
   Widget build(BuildContext context) {
-    scheduleLifecycleCallbacks();
-    return Text('Count: ${count.value}');
+    scheduleMountedCallbackIfNeeded();
+    return Text('Value: ${store.value}');
   }
 }
 ```
 
 **Available mixins:**
 
-- `LifecycleHooksStateMixin` - Lifecycle hooks (`onMounted`, `onUnmounted`, etc.)
-- `ReactiveProviderStateMixin` - `EffectScope` for `watchEffect()`, `watch()` with auto-cleanup
+- `LifecycleCallbacks` - Callback storage and registration
+- `LifecycleHooksStateMixin` - Flutter lifecycle method overrides
+- `BindStateMixin` - State persistence via `bind()`
+- `ReactiveStateMixin` - EffectScope and reactivity for auto-tracking
 
 ## Dependency Injection
 
@@ -254,7 +213,6 @@ final log = get<Logger>(key: #console);
 | Widget | Use When |
 |--------|----------|
 | `ReactiveWidget` | Full component with auto-reactivity, lifecycle, stores |
-| `BindWidget` | State persistence + lifecycle, explicit reactivity control |
 | `Observe<T>` | Watch specific source(s), explicit dependency |
 | `ObserveEffect` | Auto-track multiple dependencies in builder |
 | `.watch(context)` | Simple inline reactive values in any widget |

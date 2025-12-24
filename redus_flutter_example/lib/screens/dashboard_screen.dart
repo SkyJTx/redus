@@ -15,7 +15,7 @@ class DashboardScreen extends ReactiveWidget {
   void setup() {
     final store = get<DashboardStore>();
 
-    onMounted((context) {
+    onMounted(() {
       debugPrint('🚀 Dashboard mounted');
     });
 
@@ -28,7 +28,7 @@ class DashboardScreen extends ReactiveWidget {
       }
     });
 
-    onUnmounted((context) => debugPrint('👋 Dashboard unmounted'));
+    onDispose(() => debugPrint('👋 Dashboard unmounted'));
   }
 
   @override
