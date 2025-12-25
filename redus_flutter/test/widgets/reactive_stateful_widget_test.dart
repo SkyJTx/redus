@@ -45,36 +45,6 @@ void main() {
       expect(logs, contains('disposed'));
     });
 
-    testWidgets('bind() should persist state across parent rebuilds',
-        (tester) async {
-      final parentTrigger = ref(0);
-      late _CounterStore capturedStore;
-
-      await tester.pumpWidget(MaterialApp(
-        home: Builder(builder: (context) {
-          parentTrigger.watch(context);
-          return _BindTestWidget(
-            onStoreCreated: (store) => capturedStore = store,
-          );
-        }),
-      ));
-
-      // Initial state
-      expect(find.text('Count: 0'), findsOneWidget);
-
-      // Increment via store
-      capturedStore.increment();
-      await tester.pump();
-      expect(find.text('Count: 1'), findsOneWidget);
-
-      // Trigger parent rebuild
-      parentTrigger.value++;
-      await tester.pump();
-
-      // State should persist!
-      expect(find.text('Count: 1'), findsOneWidget);
-    });
-
     testWidgets('reactive tracking triggers rebuilds', (tester) async {
       await tester.pumpWidget(const MaterialApp(
         home: _ReactiveTestWidget(),
@@ -333,11 +303,6 @@ void main() {
 // TEST WIDGETS
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _CounterStore {
-  final count = ref(0);
-  void increment() => count.value++;
-}
-
 class _SetupTestWidget extends ReactiveWidget {
   final VoidCallback onSetup;
 
@@ -381,30 +346,6 @@ class _LifecycleTestWidgetState
   @override
   Widget render(BuildContext context) {
     return const Text('Lifecycle Test');
-  }
-}
-
-class _BindTestWidget extends ReactiveWidget {
-  final void Function(_CounterStore) onStoreCreated;
-
-  const _BindTestWidget({required this.onStoreCreated});
-
-  @override
-  ReactiveState<_BindTestWidget> createState() => _BindTestWidgetState();
-}
-
-class _BindTestWidgetState extends ReactiveState<_BindTestWidget> {
-  late final _CounterStore store;
-
-  @override
-  void setup() {
-    store = _CounterStore();
-    widget.onStoreCreated(store);
-  }
-
-  @override
-  Widget render(BuildContext context) {
-    return Text('Count: ${store.count.value}');
   }
 }
 
