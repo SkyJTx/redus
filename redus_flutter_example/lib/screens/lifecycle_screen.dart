@@ -529,44 +529,49 @@ class _LogEntry {
 class _LifecycleComponent extends ReactiveWidget {
   final void Function(String, Color) onLog;
 
-  _LifecycleComponent({super.key, required this.onLog});
+  const _LifecycleComponent({super.key, required this.onLog});
 
-  late final counter = bind(() => ref(0));
+  @override
+  ReactiveState<_LifecycleComponent> createState() => _LifecycleComponentState();
+}
+
+class _LifecycleComponentState extends ReactiveState<_LifecycleComponent> {
+  late final counter = ref(0);
 
   @override
   void setup() {
     // Before initState
     onInitState(
-      () => onLog('onInitState:before', const Color(0xFF00D9FF)),
+      () => widget.onLog('onInitState:before', const Color(0xFF00D9FF)),
       timing: LifecycleTiming.before,
     );
 
     // After initState
-    onInitState(() => onLog('onInitState:after', const Color(0xFF10B981)));
+    onInitState(() => widget.onLog('onInitState:after', const Color(0xFF10B981)));
 
     // After first frame
-    onMounted(() => onLog('onMounted', const Color(0xFFF59E0B)));
+    onMounted(() => widget.onLog('onMounted', const Color(0xFFF59E0B)));
 
     // Before/after widget update (props change)
     onDidUpdateWidget<_LifecycleComponent>(
       (oldWidget, newWidget) =>
-          onLog('onDidUpdateWidget:before', const Color(0xFFEF4444)),
+          widget.onLog('onDidUpdateWidget:before', const Color(0xFFEF4444)),
       timing: LifecycleTiming.before,
     );
     onDidUpdateWidget<_LifecycleComponent>(
       (oldWidget, newWidget) =>
-          onLog('onDidUpdateWidget:after', const Color(0xFFEF4444)),
+          widget.onLog('onDidUpdateWidget:after', const Color(0xFFEF4444)),
     );
 
     // Deactivate (removed from tree)
-    onDeactivate(() => onLog('onDeactivate', const Color(0xFF8B5CF6)));
+    onDeactivate(() => widget.onLog('onDeactivate', const Color(0xFF8B5CF6)));
 
     // Dispose (cleanup)
     onDispose(
-      () => onLog('onDispose:before', const Color(0xFFEC4899)),
+      () => widget.onLog('onDispose:before', const Color(0xFFEC4899)),
       timing: LifecycleTiming.before,
     );
-    onDispose(() => onLog('onDispose:after', const Color(0xFFEC4899)));
+    onDispose(() => widget.onLog('onDispose:after', const Color(0xFFEC4899)));
   }
 
   @override

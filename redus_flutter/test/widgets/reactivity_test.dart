@@ -6,7 +6,7 @@ void main() {
   group('ReactiveWidget auto-tracking', () {
     testWidgets('should auto-track ref in render() and rebuild on change',
         (tester) async {
-      await tester.pumpWidget(MaterialApp(home: _RefAutoTrackWidget()));
+      await tester.pumpWidget(const MaterialApp(home: _RefAutoTrackWidget()));
 
       expect(find.text('Count: 0'), findsOneWidget);
 
@@ -18,7 +18,7 @@ void main() {
     });
 
     testWidgets('should auto-track computed in render()', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: _ComputedAutoTrackWidget()));
+      await tester.pumpWidget(const MaterialApp(home: _ComputedAutoTrackWidget()));
 
       expect(find.text('Doubled: 0'), findsOneWidget);
 
@@ -30,7 +30,7 @@ void main() {
     });
 
     testWidgets('should auto-track multiple refs in render()', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: _MultiRefAutoTrackWidget()));
+      await tester.pumpWidget(const MaterialApp(home: _MultiRefAutoTrackWidget()));
 
       expect(find.text('A: 0, B: 10'), findsOneWidget);
 
@@ -171,7 +171,7 @@ void main() {
       await tester.pumpWidget(MaterialApp(
         home: Builder(builder: (context) {
           parentTrigger.watch(context);
-          return _BindPersistenceWidget();
+          return const _BindPersistenceWidget();
         }),
       ));
 
@@ -191,7 +191,7 @@ void main() {
     });
 
     testWidgets('bind() with computed should work correctly', (tester) async {
-      await tester.pumpWidget(MaterialApp(home: _BindComputedWidget()));
+      await tester.pumpWidget(const MaterialApp(home: _BindComputedWidget()));
 
       expect(find.text('Count: 0, Doubled: 0'), findsOneWidget);
 
@@ -229,9 +229,14 @@ void main() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _RefAutoTrackWidget extends ReactiveWidget {
-  _RefAutoTrackWidget();
+  const _RefAutoTrackWidget();
 
-  late final count = bind(() => ref(0));
+  @override
+  ReactiveState<_RefAutoTrackWidget> createState() => _RefAutoTrackWidgetState();
+}
+
+class _RefAutoTrackWidgetState extends ReactiveState<_RefAutoTrackWidget> {
+  late final count = ref(0);
 
   @override
   void setup() {}
@@ -251,10 +256,15 @@ class _RefAutoTrackWidget extends ReactiveWidget {
 }
 
 class _ComputedAutoTrackWidget extends ReactiveWidget {
-  _ComputedAutoTrackWidget();
+  const _ComputedAutoTrackWidget();
 
-  late final base = bind(() => ref(0));
-  late final doubled = bind(() => computed(() => base.value * 2));
+  @override
+  ReactiveState<_ComputedAutoTrackWidget> createState() => _ComputedAutoTrackWidgetState();
+}
+
+class _ComputedAutoTrackWidgetState extends ReactiveState<_ComputedAutoTrackWidget> {
+  late final base = ref(0);
+  late final doubled = computed(() => base.value * 2);
 
   @override
   void setup() {}
@@ -274,10 +284,15 @@ class _ComputedAutoTrackWidget extends ReactiveWidget {
 }
 
 class _MultiRefAutoTrackWidget extends ReactiveWidget {
-  _MultiRefAutoTrackWidget();
+  const _MultiRefAutoTrackWidget();
 
-  late final countA = bind(() => ref(0));
-  late final countB = bind(() => ref(10));
+  @override
+  ReactiveState<_MultiRefAutoTrackWidget> createState() => _MultiRefAutoTrackWidgetState();
+}
+
+class _MultiRefAutoTrackWidgetState extends ReactiveState<_MultiRefAutoTrackWidget> {
+  late final countA = ref(0);
+  late final countB = ref(10);
 
   @override
   void setup() {}
@@ -303,14 +318,19 @@ class _MultiRefAutoTrackWidget extends ReactiveWidget {
 class _WatchTestWidget extends ReactiveWidget {
   final List<String> logs;
 
-  _WatchTestWidget({required this.logs});
+  const _WatchTestWidget({required this.logs});
 
-  late final count = bind(() => ref(0));
+  @override
+  ReactiveState<_WatchTestWidget> createState() => _WatchTestWidgetState();
+}
+
+class _WatchTestWidgetState extends ReactiveState<_WatchTestWidget> {
+  late final count = ref(0);
 
   @override
   void setup() {
     watch(() => count.value, (newVal, oldVal, onCleanup) {
-      logs.add('Changed from $oldVal to $newVal');
+      widget.logs.add('Changed from $oldVal to $newVal');
     });
   }
 
@@ -326,14 +346,19 @@ class _WatchTestWidget extends ReactiveWidget {
 class _WatchValuesTestWidget extends ReactiveWidget {
   final void Function(int newVal, int oldVal) onChange;
 
-  _WatchValuesTestWidget({required this.onChange});
+  const _WatchValuesTestWidget({required this.onChange});
 
-  late final count = bind(() => ref(0));
+  @override
+  ReactiveState<_WatchValuesTestWidget> createState() => _WatchValuesTestWidgetState();
+}
+
+class _WatchValuesTestWidgetState extends ReactiveState<_WatchValuesTestWidget> {
+  late final count = ref(0);
 
   @override
   void setup() {
     watch(() => count.value, (newVal, oldVal, onCleanup) {
-      onChange(newVal, oldVal!);
+      widget.onChange(newVal, oldVal!);
     });
   }
 
@@ -349,16 +374,21 @@ class _WatchValuesTestWidget extends ReactiveWidget {
 class _WatchEffectTestWidget extends ReactiveWidget {
   final VoidCallback onRun;
 
-  _WatchEffectTestWidget({required this.onRun});
+  const _WatchEffectTestWidget({required this.onRun});
 
-  late final count = bind(() => ref(0));
+  @override
+  ReactiveState<_WatchEffectTestWidget> createState() => _WatchEffectTestWidgetState();
+}
+
+class _WatchEffectTestWidgetState extends ReactiveState<_WatchEffectTestWidget> {
+  late final count = ref(0);
 
   @override
   void setup() {
     watchEffect((onCleanup) {
       // Track count
       final _ = count.value;
-      onRun();
+      widget.onRun();
     });
   }
 
@@ -375,16 +405,21 @@ class _WatchEffectCleanupWidget extends ReactiveWidget {
   final VoidCallback onRun;
   final VoidCallback onCleanup;
 
-  _WatchEffectCleanupWidget({required this.onRun, required this.onCleanup});
+  const _WatchEffectCleanupWidget({required this.onRun, required this.onCleanup});
 
-  late final count = bind(() => ref(0));
+  @override
+  ReactiveState<_WatchEffectCleanupWidget> createState() => _WatchEffectCleanupWidgetState();
+}
+
+class _WatchEffectCleanupWidgetState extends ReactiveState<_WatchEffectCleanupWidget> {
+  late final count = ref(0);
 
   @override
   void setup() {
     watchEffect((cleanup) {
       final _ = count.value;
-      onRun();
-      cleanup(onCleanup);
+      widget.onRun();
+      cleanup(widget.onCleanup);
     });
   }
 
@@ -405,23 +440,35 @@ class _WatchEffectExternalRefWidget extends ReactiveWidget {
       {required this.trigger, required this.onRun});
 
   @override
+  ReactiveState<_WatchEffectExternalRefWidget> createState() =>
+      _WatchEffectExternalRefWidgetState();
+}
+
+class _WatchEffectExternalRefWidgetState
+    extends ReactiveState<_WatchEffectExternalRefWidget> {
+  @override
   void setup() {
     watchEffect((onCleanup) {
-      final _ = trigger.value;
-      onRun();
+      final _ = widget.trigger.value;
+      widget.onRun();
     });
   }
 
   @override
   Widget render(BuildContext context) {
-    return Text('Trigger: ${trigger.value}');
+    return Text('Trigger: ${widget.trigger.value}');
   }
 }
 
 class _BindPersistenceWidget extends ReactiveWidget {
-  _BindPersistenceWidget();
+  const _BindPersistenceWidget();
 
-  late final count = bind(() => ref(0));
+  @override
+  ReactiveState<_BindPersistenceWidget> createState() => _BindPersistenceWidgetState();
+}
+
+class _BindPersistenceWidgetState extends ReactiveState<_BindPersistenceWidget> {
+  late final count = ref(0);
 
   @override
   void setup() {}
@@ -441,10 +488,15 @@ class _BindPersistenceWidget extends ReactiveWidget {
 }
 
 class _BindComputedWidget extends ReactiveWidget {
-  _BindComputedWidget();
+  const _BindComputedWidget();
 
-  late final count = bind(() => ref(0));
-  late final doubled = bind(() => computed(() => count.value * 2));
+  @override
+  ReactiveState<_BindComputedWidget> createState() => _BindComputedWidgetState();
+}
+
+class _BindComputedWidgetState extends ReactiveState<_BindComputedWidget> {
+  late final count = ref(0);
+  late final doubled = computed(() => count.value * 2);
 
   @override
   void setup() {}
@@ -466,15 +518,20 @@ class _BindComputedWidget extends ReactiveWidget {
 class _CombinedReactivityWidget extends ReactiveWidget {
   final List<String> logs;
 
-  _CombinedReactivityWidget({required this.logs});
+  const _CombinedReactivityWidget({required this.logs});
 
-  late final base = bind(() => ref(0));
-  late final doubled = bind(() => computed(() => base.value * 2));
+  @override
+  ReactiveState<_CombinedReactivityWidget> createState() => _CombinedReactivityWidgetState();
+}
+
+class _CombinedReactivityWidgetState extends ReactiveState<_CombinedReactivityWidget> {
+  late final base = ref(0);
+  late final doubled = computed(() => base.value * 2);
 
   @override
   void setup() {
     watch(() => doubled.value, (newVal, oldVal, onCleanup) {
-      logs.add('Doubled changed to $newVal');
+      widget.logs.add('Doubled changed to $newVal');
     });
   }
 

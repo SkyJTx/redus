@@ -264,7 +264,6 @@ class _ReactiveTestWidgetState extends State<_ReactiveTestWidget>
     with
         LifecycleCallbacks,
         LifecycleHooksStateMixin,
-        BindStateMixin,
         ReactiveStateMixin {
   late final count = ref(0);
 

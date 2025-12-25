@@ -9,8 +9,13 @@ import '../stores/dashboard_store.dart';
 /// - UI subscribes/unsubscribes via the Live toggle
 /// - Data persists even when navigating away from dashboard
 class DashboardScreen extends ReactiveWidget {
-  DashboardScreen({super.key});
+  const DashboardScreen({super.key});
 
+  @override
+  ReactiveState<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends ReactiveState<DashboardScreen> {
   @override
   void setup() {
     final store = get<DashboardStore>();

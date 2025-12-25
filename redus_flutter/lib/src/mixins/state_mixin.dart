@@ -1,8 +1,7 @@
-/// State Mixins - Lifecycle hooks and state binding for `State<T>` classes.
+/// State Mixins - Lifecycle hooks and reactivity for `State<T>` classes.
 ///
 /// Provides mixins for standard Flutter StatefulWidget:
 /// - [LifecycleHooksStateMixin] - Lifecycle hooks with Flutter semantics
-/// - [BindStateMixin] - State persistence via bind()
 /// - [ReactiveStateMixin] - EffectScope and reactivity
 library;
 
@@ -13,36 +12,8 @@ import 'package:redus/reactivity.dart';
 import 'lifecycle_mixin.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// BIND STATE MIXIN
+// LIFECYCLE HOOKS STATE MIXIN
 // ═══════════════════════════════════════════════════════════════════════════
-
-/// Mixin providing bind() for state persistence in State classes.
-///
-/// Use bind() to create state that persists across parent rebuilds:
-///
-/// ```dart
-/// class _MyState extends State<MyWidget> with BindStateMixin {
-///   late final count = bind(() => ref(0));
-///   late final store = bind(() => MyStore());
-/// }
-/// ```
-mixin BindStateMixin<T extends StatefulWidget> on State<T> {
-  final Map<int, dynamic> _bindStorage = {};
-  int _bindIndex = 0;
-
-  /// Create or retrieve state that persists across parent rebuilds.
-  S bind<S>(S Function() create) {
-    if (!_bindStorage.containsKey(_bindIndex)) {
-      _bindStorage[_bindIndex] = create();
-    }
-    return _bindStorage[_bindIndex++] as S;
-  }
-
-  /// Reset bind index. Call when widget instance changes.
-  void resetBindIndex() {
-    _bindIndex = 0;
-  }
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // LIFECYCLE HOOKS STATE MIXIN
@@ -70,6 +41,7 @@ mixin LifecycleHooksStateMixin<T extends StatefulWidget>
   bool _dependenciesInitialized = false;
 
   @override
+  @mustCallSuper
   void initState() {
     runInitStateCallbacks(LifecycleTiming.before);
     super.initState();
@@ -77,6 +49,7 @@ mixin LifecycleHooksStateMixin<T extends StatefulWidget>
   }
 
   @override
+  @mustCallSuper
   void didChangeDependencies() {
     if (!_dependenciesInitialized) {
       _dependenciesInitialized = true;
@@ -89,6 +62,7 @@ mixin LifecycleHooksStateMixin<T extends StatefulWidget>
   }
 
   @override
+  @mustCallSuper
   void didUpdateWidget(covariant T oldWidget) {
     runDidUpdateWidgetCallbacks(LifecycleTiming.before, oldWidget, widget);
     super.didUpdateWidget(oldWidget);
@@ -96,6 +70,7 @@ mixin LifecycleHooksStateMixin<T extends StatefulWidget>
   }
 
   @override
+  @mustCallSuper
   void deactivate() {
     runDeactivateCallbacks(LifecycleTiming.before);
     super.deactivate();
@@ -103,6 +78,7 @@ mixin LifecycleHooksStateMixin<T extends StatefulWidget>
   }
 
   @override
+  @mustCallSuper
   void activate() {
     runActivateCallbacks(LifecycleTiming.before);
     super.activate();
@@ -110,6 +86,7 @@ mixin LifecycleHooksStateMixin<T extends StatefulWidget>
   }
 
   @override
+  @mustCallSuper
   void reassemble() {
     runReassembleCallbacks(LifecycleTiming.before);
     super.reassemble();
@@ -117,6 +94,7 @@ mixin LifecycleHooksStateMixin<T extends StatefulWidget>
   }
 
   @override
+  @mustCallSuper
   void dispose() {
     runDisposeCallbacks(LifecycleTiming.before);
     runDisposeCallbacks(LifecycleTiming.after);
@@ -125,6 +103,7 @@ mixin LifecycleHooksStateMixin<T extends StatefulWidget>
 
   /// Schedule mounted callback after first build.
   /// Call this at end of build() method.
+  @protected
   void scheduleMountedCallbackIfNeeded() {
     if (_isFirstBuild) {
       _isFirstBuild = false;

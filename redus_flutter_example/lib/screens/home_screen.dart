@@ -404,13 +404,20 @@ class _PackageInfoSection extends StatelessWidget {
             child: SelectableText(
               '''// pubspec.yaml
 dependencies:
-  redus_flutter: ^0.9.0
+  redus_flutter: ^0.11.0
 
 // main.dart
 import 'package:redus_flutter/redus_flutter.dart';
 
 class Counter extends ReactiveWidget {
-  late final count = bind(() => ref(0));
+  const Counter({super.key});
+
+  @override
+  ReactiveState<Counter> createState() => _CounterState();
+}
+
+class _CounterState extends ReactiveState<Counter> {
+  late final count = ref(0);
 
   @override
   Widget render(BuildContext context) {

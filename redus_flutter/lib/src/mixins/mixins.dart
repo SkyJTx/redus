@@ -2,7 +2,6 @@
 ///
 /// Provides mixins for widgets and State classes:
 /// - [LifecycleCallbacks] - Base lifecycle callback storage
-/// - [BindStateMixin] - State persistence via bind()
 /// - [LifecycleHooksStateMixin] - Lifecycle hooks for State classes
 /// - [ReactiveStateMixin] - Reactive tracking for State classes
 library;

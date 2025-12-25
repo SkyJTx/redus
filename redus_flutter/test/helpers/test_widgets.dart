@@ -39,36 +39,45 @@ class TestReactiveWidget extends ReactiveWidget {
   });
 
   @override
+  ReactiveState<TestReactiveWidget> createState() => _TestReactiveState();
+}
+
+class _TestReactiveState extends ReactiveState<TestReactiveWidget> {
+  @override
   void setup() {
-    onSetupCallback?.call();
-    if (onMountedCallback != null) {
-      onMounted(onMountedCallback!);
+    widget.onSetupCallback?.call();
+    if (widget.onMountedCallback != null) {
+      onMounted(widget.onMountedCallback!);
     }
-    if (onDisposeCallback != null) {
-      onDispose(onDisposeCallback!);
+    if (widget.onDisposeCallback != null) {
+      onDispose(widget.onDisposeCallback!);
     }
   }
 
   @override
   Widget render(BuildContext context) {
-    return builder?.call(context) ?? const Text('Test');
+    return widget.builder?.call(context) ?? const Text('Test');
   }
 }
 
-/// Test component with bind() for store persistence testing.
+/// Test component for store persistence testing.
 class BindStoreTestWidget extends ReactiveWidget {
   final void Function(CounterStore)? onStoreCreated;
 
-  BindStoreTestWidget({super.key, this.onStoreCreated});
-
-  late final store = bind(() {
-    final s = CounterStore();
-    onStoreCreated?.call(s);
-    return s;
-  });
+  const BindStoreTestWidget({super.key, this.onStoreCreated});
 
   @override
-  void setup() {}
+  ReactiveState<BindStoreTestWidget> createState() => _BindStoreTestWidgetState();
+}
+
+class _BindStoreTestWidgetState extends ReactiveState<BindStoreTestWidget> {
+  late final CounterStore store;
+
+  @override
+  void setup() {
+    store = CounterStore();
+    widget.onStoreCreated?.call(store);
+  }
 
   @override
   Widget render(BuildContext context) {
@@ -80,15 +89,20 @@ class BindStoreTestWidget extends ReactiveWidget {
 class StoreCreationCountWidget extends ReactiveWidget {
   final void Function() onCreation;
 
-  StoreCreationCountWidget({super.key, required this.onCreation});
-
-  late final store = bind(() {
-    onCreation();
-    return CounterStore();
-  });
+  const StoreCreationCountWidget({super.key, required this.onCreation});
 
   @override
-  void setup() {}
+  ReactiveState<StoreCreationCountWidget> createState() => _StoreCreationCountWidgetState();
+}
+
+class _StoreCreationCountWidgetState extends ReactiveState<StoreCreationCountWidget> {
+  late final CounterStore store;
+
+  @override
+  void setup() {
+    widget.onCreation();
+    store = CounterStore();
+  }
 
   @override
   Widget render(BuildContext context) {
@@ -96,19 +110,23 @@ class StoreCreationCountWidget extends ReactiveWidget {
   }
 }
 
-/// Test component with multiple binds.
+/// Test component with multiple stores.
 class MultiBindTestWidget extends ReactiveWidget {
-  MultiBindTestWidget({super.key});
-
-  late final storeA = bind(() => CounterStore());
-  late final storeB = bind(() {
-    final s = CounterStore();
-    s.count.value = 100;
-    return s;
-  });
+  const MultiBindTestWidget({super.key});
 
   @override
-  void setup() {}
+  ReactiveState<MultiBindTestWidget> createState() => _MultiBindTestWidgetState();
+}
+
+class _MultiBindTestWidgetState extends ReactiveState<MultiBindTestWidget> {
+  late final CounterStore storeA;
+  late final CounterStore storeB;
+
+  @override
+  void setup() {
+    storeA = CounterStore();
+    storeB = CounterStore()..count.value = 100;
+  }
 
   @override
   Widget render(BuildContext context) {
@@ -123,11 +141,16 @@ class PropTestWidget extends ReactiveWidget {
   const PropTestWidget({super.key, required this.propValue});
 
   @override
+  ReactiveState<PropTestWidget> createState() => _PropTestWidgetState();
+}
+
+class _PropTestWidgetState extends ReactiveState<PropTestWidget> {
+  @override
   void setup() {}
 
   @override
   Widget render(BuildContext context) {
-    return Text('Prop: $propValue');
+    return Text('Prop: ${widget.propValue}');
   }
 }
 

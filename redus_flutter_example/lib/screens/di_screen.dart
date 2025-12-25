@@ -63,7 +63,7 @@ class _RegisterGetDemo extends StatelessWidget {
       subtitle: 'Register and retrieve singletons',
       color: const Color(0xFF10B981),
       code: '''// In main.dart
-register<ApiService>(ApiService());
+register<ApiService>(ApiService();
 
 // Anywhere in the app
 final api = get<ApiService>();
@@ -132,7 +132,7 @@ class _FactoryDemo extends StatelessWidget {
       subtitle: 'Create new instance on each get()',
       color: const Color(0xFF0EA5E9),
       code: '''// Register factory
-registerFactory<Logger>(() => Logger());
+registerFactory<Logger>(() => Logger();
 
 // Each call creates new instance
 final log1 = get<Logger>(); // new Logger()

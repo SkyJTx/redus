@@ -50,13 +50,18 @@ class _DependencyTestWidget extends ReactiveWidget {
   const _DependencyTestWidget({required this.logs});
 
   @override
+  ReactiveState<_DependencyTestWidget> createState() => _DependencyTestWidgetState();
+}
+
+class _DependencyTestWidgetState extends ReactiveState<_DependencyTestWidget> {
+  @override
   void setup() {
-    onMounted(() => logs.add('mounted'));
+    onMounted(() => widget.logs.add('mounted'));
     onDidChangeDependencies(
-      () => logs.add('beforeDependenciesChanged'),
+      () => widget.logs.add('beforeDependenciesChanged'),
       timing: LifecycleTiming.before,
     );
-    onDidChangeDependencies(() => logs.add('dependenciesChanged'));
+    onDidChangeDependencies(() => widget.logs.add('dependenciesChanged'));
   }
 
   @override
@@ -76,14 +81,19 @@ class _SimpleHookTestWidget extends ReactiveWidget {
   });
 
   @override
+  ReactiveState<_SimpleHookTestWidget> createState() => _SimpleHookTestWidgetState();
+}
+
+class _SimpleHookTestWidgetState extends ReactiveState<_SimpleHookTestWidget> {
+  @override
   void setup() {
-    onMounted(() => logs.add('mounted'));
+    onMounted(() => widget.logs.add('mounted'));
     onDidChangeDependencies(
-      () => logs.add('beforeDependenciesChanged'),
+      () => widget.logs.add('beforeDependenciesChanged'),
       timing: LifecycleTiming.before,
     );
-    onDidChangeDependencies(() => logs.add('dependenciesChanged'));
-    onCallbackRegistered();
+    onDidChangeDependencies(() => widget.logs.add('dependenciesChanged'));
+    widget.onCallbackRegistered();
   }
 
   @override

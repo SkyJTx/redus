@@ -144,20 +144,25 @@ class _WatchEffectTestWidget extends ReactiveWidget {
   });
 
   @override
+  ReactiveState<_WatchEffectTestWidget> createState() => _WatchEffectTestWidgetState();
+}
+
+class _WatchEffectTestWidgetState extends ReactiveState<_WatchEffectTestWidget> {
+  @override
   void setup() {
     watchEffect((onCleanup) {
       // Access reactive value to track dependency
-      final _ = trigger.value;
-      onEffectRun();
+      final _ = widget.trigger.value;
+      widget.onEffectRun();
       onCleanup(() {
-        this.onCleanup();
+        widget.onCleanup();
       });
     });
   }
 
   @override
   Widget render(BuildContext context) {
-    return Text('Value: ${trigger.value}');
+    return Text('Value: ${widget.trigger.value}');
   }
 }
 
@@ -171,16 +176,21 @@ class _EffectCounterWidget extends ReactiveWidget {
   });
 
   @override
+  ReactiveState<_EffectCounterWidget> createState() => _EffectCounterWidgetState();
+}
+
+class _EffectCounterWidgetState extends ReactiveState<_EffectCounterWidget> {
+  @override
   void setup() {
     watchEffect((onCleanup) {
-      final _ = trigger.value;
-      onEffectRun();
+      final _ = widget.trigger.value;
+      widget.onEffectRun();
     });
   }
 
   @override
   Widget render(BuildContext context) {
-    return Text('Value: ${trigger.value}');
+    return Text('Value: ${widget.trigger.value}');
   }
 }
 
@@ -194,11 +204,16 @@ class _TimerEffectWidget extends ReactiveWidget {
   });
 
   @override
+  ReactiveState<_TimerEffectWidget> createState() => _TimerEffectWidgetState();
+}
+
+class _TimerEffectWidgetState extends ReactiveState<_TimerEffectWidget> {
+  @override
   void setup() {
     watchEffect((onCleanup) {
-      if (isLive.value) {
+      if (widget.isLive.value) {
         final timer = Timer.periodic(const Duration(milliseconds: 50), (_) {
-          onTimerFire();
+          widget.onTimerFire();
         });
         onCleanup(() => timer.cancel());
       }
@@ -207,6 +222,6 @@ class _TimerEffectWidget extends ReactiveWidget {
 
   @override
   Widget render(BuildContext context) {
-    return Text('Live: ${isLive.value}');
+    return Text('Live: ${widget.isLive.value}');
   }
 }

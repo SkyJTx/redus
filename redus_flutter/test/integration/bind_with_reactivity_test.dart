@@ -10,7 +10,7 @@ void main() {
   group('bind() with watch() in setup', () {
     testWidgets('should handle multiple Ref types accessed in different phases',
         (tester) async {
-      await tester.pumpWidget(MaterialApp(
+      await tester.pumpWidget(const MaterialApp(
         home: Scaffold(body: _WatchWithMultipleRefs()),
       ));
 
@@ -29,10 +29,15 @@ void main() {
 // Test widget: uses watch() in setup() with Ref<String>,
 // then accesses Ref<List<String>> in render().
 class _WatchWithMultipleRefs extends ReactiveWidget {
-  _WatchWithMultipleRefs();
+  const _WatchWithMultipleRefs();
 
-  late final searchQuery = bind(() => ref(''));
-  late final logs = bind(() => ref<List<String>>([]));
+  @override
+  ReactiveState<_WatchWithMultipleRefs> createState() => _WatchWithMultipleRefsState();
+}
+
+class _WatchWithMultipleRefsState extends ReactiveState<_WatchWithMultipleRefs> {
+  late final searchQuery = ref('');
+  late final logs = ref<List<String>>([]);
 
   @override
   void setup() {}

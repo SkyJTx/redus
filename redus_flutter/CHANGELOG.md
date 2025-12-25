@@ -5,6 +5,55 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2025-12-25
+
+### Breaking Changes
+
+- **Renamed `ReactiveStatefulWidget` to `ReactiveWidget`** - The widget that supports Flutter mixins is now the primary reactive widget.
+
+- **Renamed `ReactiveWidgetState` to `ReactiveState`** - The State class is now named `ReactiveState`.
+
+- **Removed old `ReactiveWidget`** - The old single-class `ReactiveWidget` has been removed. Use the new `ReactiveWidget` with `ReactiveState`.
+
+- **Removed `bind()` functionality** - The `bind()` method and `BindStateMixin` have been removed. Initialize your stores and refs in `setup()` instead.
+
+  **Migration:**
+
+  ```dart
+  // Before (old ReactiveWidget with bind)
+  class Counter extends OldReactiveWidget {
+    late final count = bind(() => ref(0));
+    late final store = bind(() => MyStore());
+    
+    @override
+    Widget render(BuildContext context) => Text('${count.value}');
+  }
+
+  // After (new ReactiveWidget without bind)
+  class Counter extends ReactiveWidget {
+    const Counter({super.key});
+
+    @override
+    ReactiveState<Counter> createState() => _CounterState();
+  }
+
+  class _CounterState extends ReactiveState<Counter> {
+    late final Ref<int> count;
+    late final MyStore store;
+
+    @override
+    void setup() {
+      count = ref(0);
+      store = MyStore();
+    }
+
+    @override
+    Widget render(BuildContext context) => Text('${count.value}');
+  }
+  ```
+
+---
+
 ## [0.10.2] - 2025-12-25
 
 ### Added

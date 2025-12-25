@@ -1,12 +1,10 @@
 /// Vue-like Component system for Flutter with reactive state and lifecycle hooks.
 ///
 /// This library provides:
-/// - [ReactiveWidget] - Vue-like reactive component base class with `bind()` API
-/// - [BindWidget] - Lightweight widget with bind() and lifecycle (no auto-reactivity)
+/// - [ReactiveWidget] - Reactive widget with customizable State (supports Flutter mixins)
 /// - [Observe] - Widget that watches a reactive source and rebuilds when it changes
 /// - [ObserveEffect] - Widget that auto-tracks reactive dependencies
-/// - [BindMixin] - Mixin for adding bind() to custom widgets
-/// - [LifecycleHooksStateMixin] and [ReactiveProviderStateMixin] for State classes
+/// - [LifecycleHooksStateMixin] and [ReactiveStateMixin] for custom State classes
 /// - Lifecycle hooks with Flutter semantics (onInitState, onDispose, etc.)
 /// - Fine-grained reactivity with `.watch(context)` extension
 /// - Dependency injection (register, registerFactory, get) from redus package
@@ -21,7 +19,14 @@
 /// }
 ///
 /// class Counter extends ReactiveWidget {
-///   late final store = bind(() => CounterStore());
+///   const Counter({super.key});
+///
+///   @override
+///   ReactiveState<Counter> createState() => _CounterState();
+/// }
+///
+/// class _CounterState extends ReactiveState<Counter> {
+///   late final store = CounterStore();
 ///
 ///   @override
 ///   void setup() {

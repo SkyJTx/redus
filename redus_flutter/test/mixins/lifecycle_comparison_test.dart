@@ -146,7 +146,7 @@ void main() {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // REACTIVEWIDGET: All Lifecycle Hooks
+  // ReactiveWidget: All Lifecycle Hooks
   // ═══════════════════════════════════════════════════════════════════════════
 
   group('ReactiveWidget: All Lifecycle Hooks', () {
@@ -332,7 +332,7 @@ void main() {
   });
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // REACTIVEWIDGET: Error Handling
+  // ReactiveWidget: Error Handling
   // ═══════════════════════════════════════════════════════════════════════════
 
   group('ReactiveWidget: Error Handling', () {
@@ -454,7 +454,7 @@ class _FlutterUpdateWidgetState extends State<_FlutterUpdateWidget> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// REACTIVEWIDGET TEST HELPERS
+// ReactiveWidget TEST HELPERS
 // ═══════════════════════════════════════════════════════════════════════════
 
 class _ReactiveLifecycleWidget extends ReactiveWidget {
@@ -463,15 +463,20 @@ class _ReactiveLifecycleWidget extends ReactiveWidget {
   const _ReactiveLifecycleWidget({required this.logs});
 
   @override
+  ReactiveState<_ReactiveLifecycleWidget> createState() => _ReactiveLifecycleWidgetState();
+}
+
+class _ReactiveLifecycleWidgetState extends ReactiveState<_ReactiveLifecycleWidget> {
+  @override
   void setup() {
-    onInitState(() => logs.add('initState'));
-    onDeactivate(() => logs.add('deactivate'));
-    onDispose(() => logs.add('dispose'));
+    onInitState(() => widget.logs.add('initState'));
+    onDeactivate(() => widget.logs.add('deactivate'));
+    onDispose(() => widget.logs.add('dispose'));
   }
 
   @override
   Widget render(BuildContext context) {
-    logs.add('build');
+    widget.logs.add('build');
     return const Text('Reactive');
   }
 }
@@ -482,8 +487,13 @@ class _ReactiveDependencyWidget extends ReactiveWidget {
   const _ReactiveDependencyWidget({required this.logs});
 
   @override
+  ReactiveState<_ReactiveDependencyWidget> createState() => _ReactiveDependencyWidgetState();
+}
+
+class _ReactiveDependencyWidgetState extends ReactiveState<_ReactiveDependencyWidget> {
+  @override
   void setup() {
-    onDidChangeDependencies(() => logs.add('didChangeDependencies'));
+    onDidChangeDependencies(() => widget.logs.add('didChangeDependencies'));
   }
 
   @override
@@ -500,15 +510,20 @@ class _ReactiveUpdateWidget extends ReactiveWidget {
   const _ReactiveUpdateWidget({required this.value, required this.logs});
 
   @override
+  ReactiveState<_ReactiveUpdateWidget> createState() => _ReactiveUpdateWidgetState();
+}
+
+class _ReactiveUpdateWidgetState extends ReactiveState<_ReactiveUpdateWidget> {
+  @override
   void setup() {
     onDidUpdateWidget<_ReactiveUpdateWidget>(
-      (oldWidget, widget) => logs.add('didUpdateWidget'),
+      (oldWidget, newWidget) => widget.logs.add('didUpdateWidget'),
     );
   }
 
   @override
   Widget render(BuildContext context) {
-    return Text('$value');
+    return Text('${widget.value}');
   }
 }
 
@@ -518,43 +533,48 @@ class _AllHooksWidget extends ReactiveWidget {
   const _AllHooksWidget({required this.logs});
 
   @override
+  ReactiveState<_AllHooksWidget> createState() => _AllHooksWidgetState();
+}
+
+class _AllHooksWidgetState extends ReactiveState<_AllHooksWidget> {
+  @override
   void setup() {
-    logs.add('setup');
+    widget.logs.add('setup');
 
-    onInitState(() => logs.add('onInitState:before'),
+    onInitState(() => widget.logs.add('onInitState:before'),
         timing: LifecycleTiming.before);
-    onInitState(() => logs.add('onInitState:after'));
+    onInitState(() => widget.logs.add('onInitState:after'));
 
-    onMounted(() => logs.add('onMounted'));
+    onMounted(() => widget.logs.add('onMounted'));
 
-    onDidChangeDependencies(() => logs.add('onDidChangeDependencies:before'),
+    onDidChangeDependencies(() => widget.logs.add('onDidChangeDependencies:before'),
         timing: LifecycleTiming.before);
-    onDidChangeDependencies(() => logs.add('onDidChangeDependencies:after'));
+    onDidChangeDependencies(() => widget.logs.add('onDidChangeDependencies:after'));
 
     onDidUpdateWidget<_AllHooksWidget>(
-      (oldWidget, widget) => logs.add('onDidUpdateWidget:before'),
+      (oldWidget, newWidget) => widget.logs.add('onDidUpdateWidget:before'),
       timing: LifecycleTiming.before,
     );
     onDidUpdateWidget<_AllHooksWidget>(
-      (oldWidget, widget) => logs.add('onDidUpdateWidget:after'),
+      (oldWidget, newWidget) => widget.logs.add('onDidUpdateWidget:after'),
     );
 
-    onDeactivate(() => logs.add('onDeactivate:before'),
+    onDeactivate(() => widget.logs.add('onDeactivate:before'),
         timing: LifecycleTiming.before);
-    onDeactivate(() => logs.add('onDeactivate:after'));
+    onDeactivate(() => widget.logs.add('onDeactivate:after'));
 
-    onActivate(() => logs.add('onActivate:before'),
+    onActivate(() => widget.logs.add('onActivate:before'),
         timing: LifecycleTiming.before);
-    onActivate(() => logs.add('onActivate:after'));
+    onActivate(() => widget.logs.add('onActivate:after'));
 
-    onDispose(() => logs.add('onDispose:before'),
+    onDispose(() => widget.logs.add('onDispose:before'),
         timing: LifecycleTiming.before);
-    onDispose(() => logs.add('onDispose:after'));
+    onDispose(() => widget.logs.add('onDispose:after'));
   }
 
   @override
   Widget render(BuildContext context) {
-    logs.add('build');
+    widget.logs.add('build');
     Theme.of(context); // Register dependency for didChangeDependencies test
     return const Text('All Hooks');
   }
@@ -567,19 +587,24 @@ class _PropsWidget extends ReactiveWidget {
   const _PropsWidget({required this.value, required this.logs});
 
   @override
+  ReactiveState<_PropsWidget> createState() => _PropsWidgetState();
+}
+
+class _PropsWidgetState extends ReactiveState<_PropsWidget> {
+  @override
   void setup() {
     onDidUpdateWidget<_PropsWidget>(
-      (oldWidget, widget) => logs.add('onDidUpdateWidget:before'),
+      (oldWidget, newWidget) => widget.logs.add('onDidUpdateWidget:before'),
       timing: LifecycleTiming.before,
     );
     onDidUpdateWidget<_PropsWidget>(
-      (oldWidget, widget) => logs.add('onDidUpdateWidget:after'),
+      (oldWidget, newWidget) => widget.logs.add('onDidUpdateWidget:after'),
     );
   }
 
   @override
   Widget render(BuildContext context) {
-    return Text('$value');
+    return Text('${widget.value}');
   }
 }
 
@@ -595,20 +620,25 @@ class _ErrorWidget extends ReactiveWidget {
   });
 
   @override
+  ReactiveState<_ErrorWidget> createState() => _ErrorWidgetState();
+}
+
+class _ErrorWidgetState extends ReactiveState<_ErrorWidget> {
+  @override
   void setup() {
     onErrorCaptured((error, stack) {
-      onError(error);
+      widget.onError(error);
       return true; // Mark as handled
     });
 
-    if (throwInSetup) {
+    if (widget.throwInSetup) {
       throw Exception('Setup error');
     }
   }
 
   @override
   Widget render(BuildContext context) {
-    if (throwInRender) {
+    if (widget.throwInRender) {
       throw Exception('Render error');
     }
     return const Text('No Error');

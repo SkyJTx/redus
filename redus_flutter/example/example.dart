@@ -5,7 +5,7 @@ import 'package:redus_flutter/redus_flutter.dart';
 ///
 /// Run with: `flutter run example/example.dart`
 void main() {
-  runApp(MaterialApp(home: ExampleApp()));
+  runApp(const MaterialApp(home: ExampleApp()));
 }
 
 /// A store that encapsulates counter state and logic.
@@ -19,9 +19,14 @@ class CounterStore {
 
 /// Example app showing all reactive widgets.
 class ExampleApp extends ReactiveWidget {
-  ExampleApp({super.key});
+  const ExampleApp({super.key});
 
-  late final store = bind(() => CounterStore());
+  @override
+  ReactiveState<ExampleApp> createState() => _ExampleAppState();
+}
+
+class _ExampleAppState extends ReactiveState<ExampleApp> {
+  late final store = CounterStore();
 
   @override
   void setup() {

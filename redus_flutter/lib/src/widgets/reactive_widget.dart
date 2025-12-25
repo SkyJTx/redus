@@ -1,6 +1,8 @@
-/// ReactiveWidget - A stateful reactive component with lifecycle hooks.
+/// ReactiveWidget - A reactive widget with lifecycle hooks and auto-reactivity.
 ///
-/// Uses State for storage while keeping the original widget-centric API.
+/// This widget allows you to create custom State classes that can include
+/// Flutter's built-in mixins like [SingleTickerProviderStateMixin] or
+/// [AutomaticKeepAliveClientMixin].
 library;
 
 import 'package:flutter/widgets.dart';
@@ -8,143 +10,164 @@ import 'package:flutter/widgets.dart';
 import '../mixins/lifecycle_mixin.dart';
 import '../mixins/state_mixin.dart';
 
-/// Expando to link ReactiveWidget instances to their ReactiveState.
-final Expando<ReactiveState> _stateExpando = Expando('ReactiveState');
-
-/// A reactive widget with lifecycle hooks and automatic reactivity.
+/// A StatefulWidget with reactive State that supports custom Flutter mixins.
 ///
-/// **Example:**
+/// Create a custom State class where you can add Flutter's built-in mixins
+/// like [SingleTickerProviderStateMixin].
+///
+/// **Example with animation:**
 /// ```dart
-/// class Counter extends ReactiveWidget {
-///   late final store = bind(() => CounterStore());
+/// class AnimatedCounter extends ReactiveWidget {
+///   const AnimatedCounter({super.key});
+///
+///   @override
+///   ReactiveState<AnimatedCounter> createState() => _AnimatedCounterState();
+/// }
+///
+/// class _AnimatedCounterState extends ReactiveState<AnimatedCounter>
+///     with SingleTickerProviderStateMixin {
+///   late final controller = AnimationController(
+///     vsync: this,
+///     duration: const Duration(milliseconds: 300),
+///   );
+///   late final count = ref(0);
 ///
 ///   @override
 ///   void setup() {
-///     onInitState(() => print('Count: ${store.count.value}'));
-///     onDispose(() => print('Disposing...'));
+///     onMounted(() => controller.forward();
+///     onDispose(() => controller.dispose();
 ///   }
 ///
 ///   @override
 ///   Widget render(BuildContext context) {
-///     return GestureDetector(
-///       onTap: store.increment,
-///       child: Text('Count: ${store.count.value}'),
+///     return FadeTransition(
+///       opacity: controller,
+///       child: Text('Count: ${count.value}'),
 ///     );
 ///   }
 /// }
 /// ```
+///
+/// **Example with keep alive:**
+/// ```dart
+/// class KeepAliveCounter extends ReactiveWidget {
+///   const KeepAliveCounter({super.key});
+///
+///   @override
+///   ReactiveState<KeepAliveCounter> createState() => _KeepAliveCounterState();
+/// }
+///
+/// class _KeepAliveCounterState extends ReactiveState<KeepAliveCounter>
+///     with AutomaticKeepAliveClientMixin {
+///   late final count = ref(0);
+///
+///   @override
+///   bool get wantKeepAlive => true;
+///
+///   @override
+///   void setup() {}
+///
+///   @override
+///   Widget build(BuildContext context) {
+///     super.build(context); // Required for AutomaticKeepAliveClientMixin
+///     return reactiveBuild(context); // Use reactiveBuild() instead of duplicating logic
+///   }
+///
+///   @override
+///   Widget render(BuildContext context) {
+///     return Text('Count: ${count.value}');
+///   }
+/// }
+/// ```
 abstract class ReactiveWidget extends StatefulWidget {
-  /// Creates a reactive widget.
+  /// Creates a reactive stateful widget.
   const ReactiveWidget({super.key});
 
-  /// The [BuildContext] for this widget.
-  BuildContext get context {
-    final state = _stateExpando[this];
-    assert(state != null && state.mounted,
-        'Cannot access context before mount or after dispose.');
-    return state!.context;
-  }
-
-  /// Whether this widget is currently mounted.
-  bool get mounted => _stateExpando[this]?.mounted ?? false;
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // bind() API - delegates to State storage
-  // ─────────────────────────────────────────────────────────────────────────
-
-  /// Create or retrieve state that persists across parent rebuilds.
-  T bind<T>(T Function() create) {
-    final state = _stateExpando[this];
-    assert(state != null, 'bind() can only be called after element is created');
-    return state!.bind(create);
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Lifecycle hooks - delegate to State
-  // ─────────────────────────────────────────────────────────────────────────
-
-  /// Register a callback for initState lifecycle.
-  void onInitState(LifecycleCallback callback,
-      {LifecycleTiming timing = LifecycleTiming.after}) {
-    _stateExpando[this]?.onInitState(callback, timing: timing);
-  }
-
-  /// Register a callback after the first frame renders.
-  void onMounted(LifecycleCallback callback) {
-    _stateExpando[this]?.onMounted(callback);
-  }
-
-  /// Register a callback for didChangeDependencies lifecycle.
-  void onDidChangeDependencies(LifecycleCallback callback,
-      {LifecycleTiming timing = LifecycleTiming.after}) {
-    _stateExpando[this]?.onDidChangeDependencies(callback, timing: timing);
-  }
-
-  /// Register a callback for didUpdateWidget lifecycle.
-  void onDidUpdateWidget<T>(DidUpdateWidgetCallback<T> callback,
-      {LifecycleTiming timing = LifecycleTiming.after}) {
-    _stateExpando[this]?.onDidUpdateWidget(callback, timing: timing);
-  }
-
-  /// Register a callback for deactivate lifecycle.
-  void onDeactivate(LifecycleCallback callback,
-      {LifecycleTiming timing = LifecycleTiming.after}) {
-    _stateExpando[this]?.onDeactivate(callback, timing: timing);
-  }
-
-  /// Register a callback for activate lifecycle.
-  void onActivate(LifecycleCallback callback,
-      {LifecycleTiming timing = LifecycleTiming.after}) {
-    _stateExpando[this]?.onActivate(callback, timing: timing);
-  }
-
-  /// Register a callback for dispose lifecycle.
-  void onDispose(LifecycleCallback callback,
-      {LifecycleTiming timing = LifecycleTiming.before}) {
-    _stateExpando[this]?.onDispose(callback, timing: timing);
-  }
-
-  /// Register an error handler.
-  void onErrorCaptured(ErrorCallback callback) {
-    _stateExpando[this]?.onErrorCaptured(callback);
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // Abstract methods for subclasses
-  // ─────────────────────────────────────────────────────────────────────────
-
-  /// Called once when the widget is first created.
+  /// Override this to create your custom [ReactiveState] subclass.
   ///
-  /// Use this to register lifecycle hooks and set up watchers.
-  void setup();
-
-  /// Build the UI for this widget.
-  ///
-  /// **Automatic Reactivity**: Any reactive values accessed here are
-  /// automatically tracked. The widget rebuilds when they change.
-  Widget render(BuildContext context);
-
+  /// Your State class can include additional Flutter mixins:
+  /// ```dart
+  /// @override
+  /// ReactiveState<MyWidget> createState() => _MyWidgetState();
+  /// ```
   @override
-  State<ReactiveWidget> createState() => ReactiveState();
+  ReactiveState createState();
 }
 
-/// State class for ReactiveWidget.
-class ReactiveState extends State<ReactiveWidget>
-    with
-        LifecycleCallbacks,
-        LifecycleHooksStateMixin,
-        BindStateMixin,
-        ReactiveStateMixin {
+/// Base State class for [ReactiveWidget].
+///
+/// Provides all reactive features including:
+/// - `bind()` - State persistence across parent rebuilds
+/// - Lifecycle hooks - onMounted, onDispose, etc.
+/// - Reactive tracking - Auto-rebuilds when reactive values change
+/// - Effect scope - Automatic cleanup of watchers
+///
+/// Extend this class and add Flutter mixins as needed:
+/// ```dart
+/// class _MyWidgetState extends ReactiveState<MyWidget>
+///     with SingleTickerProviderStateMixin {
+///   // Now you have AnimationController support!
+/// }
+/// ```
+///
+/// ## Using with Mixins that Override build()
+///
+/// Some Flutter mixins like [AutomaticKeepAliveClientMixin] require you to
+/// override `build()` and call `super.build(context)`. In these cases, use
+/// [reactiveBuild] to get the full reactive functionality:
+///
+/// ```dart
+/// class _MyState extends ReactiveState<MyWidget>
+///     with AutomaticKeepAliveClientMixin {
+///   @override
+///   Widget build(BuildContext context) {
+///     super.build(context); // Required for the mixin
+///     return reactiveBuild(context); // Use reactiveBuild() for full functionality
+///   }
+/// }
+/// ```
+abstract class ReactiveState<T extends ReactiveWidget> extends State<T>
+    with LifecycleCallbacks, LifecycleHooksStateMixin<T>, ReactiveStateMixin<T> {
   Object? _error;
+
+  /// Called once when the State is first created.
+  ///
+  /// Use this to register lifecycle hooks, set up watchers, and initialize
+  /// resources. This is called within an effect scope, so `watchEffect()`
+  /// and `watch()` will be automatically cleaned up on dispose.
+  ///
+  /// ```dart
+  /// @override
+  /// void setup() {
+  ///   onMounted(() => print('Widget mounted!'));
+  ///   onDispose(() => controller.dispose();
+  ///
+  ///   watchEffect((onCleanup) {
+  ///     print('Count changed: ${count.value}');
+  ///   });
+  /// }
+  /// ```
+  void setup();
+
+  /// Build the widget UI.
+  ///
+  /// Reactive values accessed here are automatically tracked, and the
+  /// widget rebuilds when they change.
+  ///
+  /// ```dart
+  /// @override
+  /// Widget render(BuildContext context) {
+  ///   return Text('Count: ${count.value}'); // Auto-tracked!
+  /// }
+  /// ```
+  Widget render(BuildContext context);
 
   @override
   @mustCallSuper
   void initState() {
-    _stateExpando[widget] = this;
-
     runInScope(() {
       try {
-        widget.setup();
+        setup();
       } catch (e, stack) {
         if (runErrorCapturedCallbacks(e, stack)) {
           _error = e;
@@ -159,42 +182,39 @@ class ReactiveState extends State<ReactiveWidget>
 
   @override
   @mustCallSuper
-  void didUpdateWidget(covariant ReactiveWidget oldWidget) {
-    _stateExpando[oldWidget] = null;
-    _stateExpando[widget] = this;
-    super.didUpdateWidget(oldWidget);
-    if (!identical(widget, oldWidget)) {
-      resetBindIndex();
-    }
-  }
-
-  @override
-  @mustCallSuper
-  void activate() {
-    super.activate();
-    _stateExpando[widget] = this;
-  }
-
-  @override
-  @mustCallSuper
   void dispose() {
     stopReactivity();
-    _stateExpando[widget] = null;
     super.dispose();
   }
 
-  @override
+  /// Performs the reactive build with full functionality.
+  ///
+  /// This method handles:
+  /// - Error state checking
+  /// - Reactive dependency tracking via [buildReactive]
+  /// - Error catching and [onErrorCaptured] callback invocation
+  /// - Scheduling [onMounted] callbacks
+  ///
+  /// Use this method when you need to override [build] for compatibility
+  /// with Flutter mixins like [AutomaticKeepAliveClientMixin]:
+  ///
+  /// ```dart
+  /// @override
+  /// Widget build(BuildContext context) {
+  ///   super.build(context); // Required for AutomaticKeepAliveClientMixin
+  ///   return reactiveBuild(context);
+  /// }
+  /// ```
+  @protected
   @mustCallSuper
-  Widget build(BuildContext context) {
-    _stateExpando[widget] = this;
-
+  Widget reactiveBuild(BuildContext context) {
     if (_error != null) {
       return ErrorWidget.withDetails(message: _error.toString());
     }
 
     final result = buildReactive(context, () {
       try {
-        return widget.render(context);
+        return render(context);
       } catch (e, stack) {
         if (runErrorCapturedCallbacks(e, stack)) {
           _error = e;
@@ -208,4 +228,7 @@ class ReactiveState extends State<ReactiveWidget>
     scheduleMountedCallbackIfNeeded();
     return result;
   }
+
+  @override
+  Widget build(BuildContext context) => reactiveBuild(context);
 }

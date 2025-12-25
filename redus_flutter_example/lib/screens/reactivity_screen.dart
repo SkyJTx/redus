@@ -68,9 +68,14 @@ class ReactivityScreen extends StatelessWidget {
 // ref() Demo
 // ============================================
 class _RefDemo extends ReactiveWidget {
-  _RefDemo();
+  const _RefDemo();
 
-  late final count = bind(() => ref(0));
+  @override
+  ReactiveState<_RefDemo> createState() => _RefDemoState();
+}
+
+class _RefDemoState extends ReactiveState<_RefDemo> {
+  late final count = ref(0);
 
   @override
   void setup() {}
@@ -137,13 +142,16 @@ count.value++;''',
 // computed() Demo
 // ============================================
 class _ComputedDemo extends ReactiveWidget {
-  _ComputedDemo();
+  const _ComputedDemo();
 
-  late final firstName = bind(() => ref('John'));
-  late final lastName = bind(() => ref('Doe'));
-  late final fullName = bind(
-    () => computed(() => '${firstName.value} ${lastName.value}'),
-  );
+  @override
+  ReactiveState<_ComputedDemo> createState() => _ComputedDemoState();
+}
+
+class _ComputedDemoState extends ReactiveState<_ComputedDemo> {
+  late final firstName = ref('John');
+  late final lastName = ref('Doe');
+  late final fullName = computed(() => '${firstName.value} ${lastName.value}');
 
   @override
   void setup() {}
@@ -274,10 +282,15 @@ class _ComputedInputsState extends State<_ComputedInputs> {
 // watch() Demo - Using REAL watch() from redus
 // ============================================
 class _WatchDemo extends ReactiveWidget {
-  _WatchDemo();
+  const _WatchDemo();
 
-  late final searchQuery = bind(() => ref(''));
-  late final logs = bind(() => ref<List<String>>([]));
+  @override
+  ReactiveState<_WatchDemo> createState() => _WatchDemoState();
+}
+
+class _WatchDemoState extends ReactiveState<_WatchDemo> {
+  late final searchQuery = ref('');
+  late final logs = ref<List<String>>([]);
 
   @override
   void setup() {
@@ -316,7 +329,7 @@ class _WatchDemo extends ReactiveWidget {
     print('Query: \$oldValue → \$newValue');
     
     // Optional cleanup
-    onCleanup(() => cancelRequest());
+    onCleanup(() => cancelRequest();
   },
 );''',
       child: Column(

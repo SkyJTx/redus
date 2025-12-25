@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:redus_flutter/redus_flutter.dart';
 
 void main() {
-  group('ReactiveStatefulWidget', () {
+  group('ReactiveWidget', () {
     testWidgets('should call setup once', (tester) async {
       var setupCount = 0;
 
@@ -90,7 +90,7 @@ void main() {
     });
   });
 
-  group('ReactiveStatefulWidget with Flutter mixins', () {
+  group('ReactiveWidget with Flutter mixins', () {
     testWidgets('works with SingleTickerProviderStateMixin', (tester) async {
       final logs = <String>[];
 
@@ -338,17 +338,17 @@ class _CounterStore {
   void increment() => count.value++;
 }
 
-class _SetupTestWidget extends ReactiveStatefulWidget {
+class _SetupTestWidget extends ReactiveWidget {
   final VoidCallback onSetup;
 
   const _SetupTestWidget({required this.onSetup});
 
   @override
-  ReactiveWidgetState<_SetupTestWidget> createState() =>
+  ReactiveState<_SetupTestWidget> createState() =>
       _SetupTestWidgetState();
 }
 
-class _SetupTestWidgetState extends ReactiveWidgetState<_SetupTestWidget> {
+class _SetupTestWidgetState extends ReactiveState<_SetupTestWidget> {
   @override
   void setup() {
     widget.onSetup();
@@ -360,18 +360,18 @@ class _SetupTestWidgetState extends ReactiveWidgetState<_SetupTestWidget> {
   }
 }
 
-class _LifecycleTestWidget extends ReactiveStatefulWidget {
+class _LifecycleTestWidget extends ReactiveWidget {
   final List<String> logs;
 
   const _LifecycleTestWidget({required this.logs});
 
   @override
-  ReactiveWidgetState<_LifecycleTestWidget> createState() =>
+  ReactiveState<_LifecycleTestWidget> createState() =>
       _LifecycleTestWidgetState();
 }
 
 class _LifecycleTestWidgetState
-    extends ReactiveWidgetState<_LifecycleTestWidget> {
+    extends ReactiveState<_LifecycleTestWidget> {
   @override
   void setup() {
     onMounted(() => widget.logs.add('mounted'));
@@ -384,24 +384,23 @@ class _LifecycleTestWidgetState
   }
 }
 
-class _BindTestWidget extends ReactiveStatefulWidget {
+class _BindTestWidget extends ReactiveWidget {
   final void Function(_CounterStore) onStoreCreated;
 
   const _BindTestWidget({required this.onStoreCreated});
 
   @override
-  ReactiveWidgetState<_BindTestWidget> createState() => _BindTestWidgetState();
+  ReactiveState<_BindTestWidget> createState() => _BindTestWidgetState();
 }
 
-class _BindTestWidgetState extends ReactiveWidgetState<_BindTestWidget> {
-  late final store = bind(() {
-    final s = _CounterStore();
-    widget.onStoreCreated(s);
-    return s;
-  });
+class _BindTestWidgetState extends ReactiveState<_BindTestWidget> {
+  late final _CounterStore store;
 
   @override
-  void setup() {}
+  void setup() {
+    store = _CounterStore();
+    widget.onStoreCreated(store);
+  }
 
   @override
   Widget render(BuildContext context) {
@@ -409,17 +408,17 @@ class _BindTestWidgetState extends ReactiveWidgetState<_BindTestWidget> {
   }
 }
 
-class _ReactiveTestWidget extends ReactiveStatefulWidget {
+class _ReactiveTestWidget extends ReactiveWidget {
   const _ReactiveTestWidget();
 
   @override
-  ReactiveWidgetState<_ReactiveTestWidget> createState() =>
+  ReactiveState<_ReactiveTestWidget> createState() =>
       _ReactiveTestWidgetState();
 }
 
 class _ReactiveTestWidgetState
-    extends ReactiveWidgetState<_ReactiveTestWidget> {
-  late final count = bind(() => ref(0));
+    extends ReactiveState<_ReactiveTestWidget> {
+  late final count = ref(0);
 
   @override
   void setup() {}
@@ -437,17 +436,17 @@ class _ReactiveTestWidgetState
 // FLUTTER MIXIN TEST WIDGETS
 // ═══════════════════════════════════════════════════════════════════════════
 
-class _AnimatedTestWidget extends ReactiveStatefulWidget {
+class _AnimatedTestWidget extends ReactiveWidget {
   final List<String> logs;
 
   const _AnimatedTestWidget({required this.logs});
 
   @override
-  ReactiveWidgetState<_AnimatedTestWidget> createState() =>
+  ReactiveState<_AnimatedTestWidget> createState() =>
       _AnimatedTestWidgetState();
 }
 
-class _AnimatedTestWidgetState extends ReactiveWidgetState<_AnimatedTestWidget>
+class _AnimatedTestWidgetState extends ReactiveState<_AnimatedTestWidget>
     with SingleTickerProviderStateMixin {
   late final AnimationController controller;
 
@@ -469,19 +468,19 @@ class _AnimatedTestWidgetState extends ReactiveWidgetState<_AnimatedTestWidget>
   }
 }
 
-class _AnimatedCounterWidget extends ReactiveStatefulWidget {
+class _AnimatedCounterWidget extends ReactiveWidget {
   const _AnimatedCounterWidget();
 
   @override
-  ReactiveWidgetState<_AnimatedCounterWidget> createState() =>
+  ReactiveState<_AnimatedCounterWidget> createState() =>
       _AnimatedCounterWidgetState();
 }
 
 class _AnimatedCounterWidgetState
-    extends ReactiveWidgetState<_AnimatedCounterWidget>
+    extends ReactiveState<_AnimatedCounterWidget>
     with SingleTickerProviderStateMixin {
   late final AnimationController controller;
-  late final count = bind(() => ref(0));
+  late final count = ref(0);
 
   @override
   void setup() {
@@ -501,16 +500,16 @@ class _AnimatedCounterWidgetState
   }
 }
 
-class _MultiAnimationWidget extends ReactiveStatefulWidget {
+class _MultiAnimationWidget extends ReactiveWidget {
   const _MultiAnimationWidget();
 
   @override
-  ReactiveWidgetState<_MultiAnimationWidget> createState() =>
+  ReactiveState<_MultiAnimationWidget> createState() =>
       _MultiAnimationWidgetState();
 }
 
 class _MultiAnimationWidgetState
-    extends ReactiveWidgetState<_MultiAnimationWidget>
+    extends ReactiveState<_MultiAnimationWidget>
     with TickerProviderStateMixin {
   late final AnimationController controller1;
   late final AnimationController controller2;
@@ -538,19 +537,19 @@ class _MultiAnimationWidgetState
   }
 }
 
-class _EffectCleanupWidget extends ReactiveStatefulWidget {
+class _EffectCleanupWidget extends ReactiveWidget {
   final VoidCallback onCleanup;
 
   const _EffectCleanupWidget({required this.onCleanup});
 
   @override
-  ReactiveWidgetState<_EffectCleanupWidget> createState() =>
+  ReactiveState<_EffectCleanupWidget> createState() =>
       _EffectCleanupWidgetState();
 }
 
 class _EffectCleanupWidgetState
-    extends ReactiveWidgetState<_EffectCleanupWidget> {
-  late final trigger = bind(() => ref(0));
+    extends ReactiveState<_EffectCleanupWidget> {
+  late final trigger = ref(0);
 
   @override
   void setup() {
@@ -566,19 +565,19 @@ class _EffectCleanupWidgetState
   }
 }
 
-class _WatchEffectTestWidget extends ReactiveStatefulWidget {
+class _WatchEffectTestWidget extends ReactiveWidget {
   final List<int> logs;
 
   const _WatchEffectTestWidget({required this.logs});
 
   @override
-  ReactiveWidgetState<_WatchEffectTestWidget> createState() =>
+  ReactiveState<_WatchEffectTestWidget> createState() =>
       _WatchEffectTestWidgetState();
 }
 
 class _WatchEffectTestWidgetState
-    extends ReactiveWidgetState<_WatchEffectTestWidget> {
-  late final count = bind(() => ref(0));
+    extends ReactiveState<_WatchEffectTestWidget> {
+  late final count = ref(0);
 
   @override
   void setup() {
@@ -629,7 +628,7 @@ class _KeepAliveListWidget extends StatelessWidget {
   }
 }
 
-class _KeepAliveItemWidget extends ReactiveStatefulWidget {
+class _KeepAliveItemWidget extends ReactiveWidget {
   final int index;
   final List<String> logs;
   final VoidCallback onDispose;
@@ -641,12 +640,12 @@ class _KeepAliveItemWidget extends ReactiveStatefulWidget {
   });
 
   @override
-  ReactiveWidgetState<_KeepAliveItemWidget> createState() =>
+  ReactiveState<_KeepAliveItemWidget> createState() =>
       _KeepAliveItemWidgetState();
 }
 
 class _KeepAliveItemWidgetState
-    extends ReactiveWidgetState<_KeepAliveItemWidget>
+    extends ReactiveState<_KeepAliveItemWidget>
     with AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
@@ -689,18 +688,18 @@ class _KeepAliveCounterListWidget extends StatelessWidget {
   }
 }
 
-class _KeepAliveCounterItem extends ReactiveStatefulWidget {
+class _KeepAliveCounterItem extends ReactiveWidget {
   const _KeepAliveCounterItem();
 
   @override
-  ReactiveWidgetState<_KeepAliveCounterItem> createState() =>
+  ReactiveState<_KeepAliveCounterItem> createState() =>
       _KeepAliveCounterItemState();
 }
 
 class _KeepAliveCounterItemState
-    extends ReactiveWidgetState<_KeepAliveCounterItem>
+    extends ReactiveState<_KeepAliveCounterItem>
     with AutomaticKeepAliveClientMixin {
-  late final count = bind(() => ref(0));
+  late final count = ref(0);
 
   @override
   bool get wantKeepAlive => true;
@@ -724,7 +723,7 @@ class _KeepAliveCounterItemState
 }
 
 // RestorationMixin Test Widget
-class _RestorableCounterWidget extends ReactiveStatefulWidget {
+class _RestorableCounterWidget extends ReactiveWidget {
   final String restorationId;
   final List<String> logs;
 
@@ -734,12 +733,12 @@ class _RestorableCounterWidget extends ReactiveStatefulWidget {
   });
 
   @override
-  ReactiveWidgetState<_RestorableCounterWidget> createState() =>
+  ReactiveState<_RestorableCounterWidget> createState() =>
       _RestorableCounterWidgetState();
 }
 
 class _RestorableCounterWidgetState
-    extends ReactiveWidgetState<_RestorableCounterWidget>
+    extends ReactiveState<_RestorableCounterWidget>
     with RestorationMixin {
   final RestorableInt _counter = RestorableInt(0);
 
@@ -767,18 +766,18 @@ class _RestorableCounterWidgetState
 }
 
 // WidgetsBindingObserver Test Widget
-class _LifecycleObserverWidget extends ReactiveStatefulWidget {
+class _LifecycleObserverWidget extends ReactiveWidget {
   final List<String> logs;
 
   const _LifecycleObserverWidget({required this.logs});
 
   @override
-  ReactiveWidgetState<_LifecycleObserverWidget> createState() =>
+  ReactiveState<_LifecycleObserverWidget> createState() =>
       _LifecycleObserverWidgetState();
 }
 
 class _LifecycleObserverWidgetState
-    extends ReactiveWidgetState<_LifecycleObserverWidget>
+    extends ReactiveState<_LifecycleObserverWidget>
     with WidgetsBindingObserver {
   @override
   void setup() {
@@ -807,21 +806,21 @@ class _LifecycleObserverWidgetState
 }
 
 // Combined Mixins Test Widget
-class _CombinedMixinWidget extends ReactiveStatefulWidget {
+class _CombinedMixinWidget extends ReactiveWidget {
   final List<String> logs;
 
   const _CombinedMixinWidget({required this.logs});
 
   @override
-  ReactiveWidgetState<_CombinedMixinWidget> createState() =>
+  ReactiveState<_CombinedMixinWidget> createState() =>
       _CombinedMixinWidgetState();
 }
 
 class _CombinedMixinWidgetState
-    extends ReactiveWidgetState<_CombinedMixinWidget>
+    extends ReactiveState<_CombinedMixinWidget>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController controller;
-  late final count = bind(() => ref(0));
+  late final count = ref(0);
 
   @override
   void setup() {

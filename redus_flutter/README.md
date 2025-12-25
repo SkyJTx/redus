@@ -7,12 +7,11 @@ Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle 
 
 ## Features
 
-- 🎯 **ReactiveWidget** - Single-class component with auto-reactivity in `render()`
-- 🎭 **ReactiveStatefulWidget** - Reactive widget with custom State (supports Flutter mixins)
+- 🎯 **ReactiveWidget** - Reactive widget with auto-reactivity in `render()` (supports Flutter mixins)
 - 👁️ **Observe** - Widget that watches a source and rebuilds
 - ⚡ **ObserveEffect** - Widget that auto-tracks dependencies
 - 🔄 **Lifecycle Hooks** - onInitState, onMounted, onDispose, etc.
-- 🧩 **Composable Mixins** - LifecycleCallbacks, BindStateMixin for custom widgets
+- 🧩 **Composable Mixins** - LifecycleCallbacks for custom widgets
 - 💉 **Dependency Injection** - Type + key-based lookup (from `redus`)
 - 🧹 **Auto Cleanup** - Effect scopes tied to widget lifecycle
 
@@ -20,12 +19,12 @@ Vue-like **ReactiveWidget** for Flutter with fine-grained reactivity, lifecycle 
 
 ```yaml
 dependencies:
-  redus_flutter: ^0.10.2
+  redus_flutter: ^0.11.0
 ```
 
 ## Quick Start
 
-### ReactiveWidget with `bind()`
+### ReactiveWidget
 
 Full reactivity with automatic dependency tracking in `render()`:
 
@@ -38,10 +37,18 @@ class CounterStore {
 }
 
 class Counter extends ReactiveWidget {
-  late final store = bind(() => CounterStore());
+  const Counter({super.key});
+
+  @override
+  ReactiveState<Counter> createState() => _CounterState();
+}
+
+class _CounterState extends ReactiveState<Counter> {
+  late final CounterStore store;
 
   @override
   void setup() {
+    store = CounterStore();
     onMounted(() => print('Count: ${store.count.value}'));
     onDispose(() => print('Cleaning up...'));
   }
@@ -57,28 +64,30 @@ class Counter extends ReactiveWidget {
 }
 ```
 
-### ReactiveStatefulWidget with Flutter Mixins
+### ReactiveWidget with Flutter Mixins
 
-When you need Flutter's built-in State mixins (for animations, keep-alive, etc.), use `ReactiveStatefulWidget`:
+When you need Flutter's built-in State mixins (for animations, keep-alive, etc.):
 
 ```dart
-class AnimatedCounter extends ReactiveStatefulWidget {
+class AnimatedCounter extends ReactiveWidget {
   const AnimatedCounter({super.key});
 
   @override
-  ReactiveWidgetState<AnimatedCounter> createState() => _AnimatedCounterState();
+  ReactiveState<AnimatedCounter> createState() => _AnimatedCounterState();
 }
 
-class _AnimatedCounterState extends ReactiveWidgetState<AnimatedCounter>
+class _AnimatedCounterState extends ReactiveState<AnimatedCounter>
     with SingleTickerProviderStateMixin {
-  late final controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 300),
-  );
-  late final count = bind(() => ref(0));
+  late final AnimationController controller;
+  late final Ref<int> count;
 
   @override
   void setup() {
+    controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    count = ref(0);
     onMounted(() => controller.forward());
     onDispose(() => controller.dispose());
   }
@@ -101,15 +110,17 @@ class _AnimatedCounterState extends ReactiveWidgetState<AnimatedCounter>
 Some Flutter mixins require overriding `build()`. Use `reactiveBuild()` to get full reactive functionality:
 
 ```dart
-class _KeepAliveState extends ReactiveWidgetState<KeepAliveWidget>
+class _KeepAliveState extends ReactiveState<KeepAliveWidget>
     with AutomaticKeepAliveClientMixin {
-  late final count = bind(() => ref(0));
+  late final Ref<int> count;
 
   @override
   bool get wantKeepAlive => true;
 
   @override
-  void setup() {}
+  void setup() {
+    count = ref(0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -231,16 +242,17 @@ The library uses a composable mixin architecture:
 // ReactiveWidget uses State-based mixins internally
 class ReactiveState extends State<ReactiveWidget>
     with LifecycleCallbacks, LifecycleHooksStateMixin, 
-         BindStateMixin, ReactiveStateMixin { ... }
+         ReactiveStateMixin { ... }
 
 // Use mixins in your own StatefulWidget
 class _MyWidgetState extends State<MyWidget>
-    with LifecycleCallbacks, LifecycleHooksStateMixin, BindStateMixin {
+    with LifecycleCallbacks, LifecycleHooksStateMixin {
   
-  late final store = bind(() => MyStore());
+  late final MyStore store;
   
   @override
   void initState() {
+    store = MyStore();
     onMounted(() => print('Mounted!'));
     onDispose(() => print('Disposing...'));
     super.initState();
@@ -258,7 +270,6 @@ class _MyWidgetState extends State<MyWidget>
 
 - `LifecycleCallbacks` - Callback storage and registration
 - `LifecycleHooksStateMixin` - Flutter lifecycle method overrides
-- `BindStateMixin` - State persistence via `bind()`
 - `ReactiveStateMixin` - EffectScope and reactivity for auto-tracking
 
 ## Dependency Injection
@@ -281,7 +292,6 @@ final log = get<Logger>(key: #console);
 | Widget | Use When |
 |--------|----------|
 | `ReactiveWidget` | Full component with auto-reactivity, lifecycle, stores |
-| `ReactiveStatefulWidget` | Need Flutter mixins (animations, keep-alive, etc.) |
 | `Observe<T>` | Watch specific source(s), explicit dependency |
 | `ObserveEffect` | Auto-track multiple dependencies in builder |
 | `.watch(context)` | Simple inline reactive values in any widget |
