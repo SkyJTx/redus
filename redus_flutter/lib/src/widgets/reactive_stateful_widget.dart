@@ -168,6 +168,7 @@ abstract class ReactiveWidgetState<T extends ReactiveStatefulWidget>
   Widget render(BuildContext context);
 
   @override
+  @mustCallSuper
   void initState() {
     runInScope(() {
       try {
@@ -185,6 +186,7 @@ abstract class ReactiveWidgetState<T extends ReactiveStatefulWidget>
   }
 
   @override
+  @mustCallSuper
   void didUpdateWidget(covariant T oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(widget, oldWidget)) {
@@ -193,6 +195,7 @@ abstract class ReactiveWidgetState<T extends ReactiveStatefulWidget>
   }
 
   @override
+  @mustCallSuper
   void dispose() {
     stopReactivity();
     super.dispose();
@@ -217,6 +220,7 @@ abstract class ReactiveWidgetState<T extends ReactiveStatefulWidget>
   /// }
   /// ```
   @protected
+  @mustCallSuper
   Widget reactiveBuild(BuildContext context) {
     if (_error != null) {
       return ErrorWidget.withDetails(message: _error.toString());

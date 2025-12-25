@@ -138,6 +138,7 @@ class ReactiveState extends State<ReactiveWidget>
   Object? _error;
 
   @override
+  @mustCallSuper
   void initState() {
     _stateExpando[widget] = this;
 
@@ -157,6 +158,7 @@ class ReactiveState extends State<ReactiveWidget>
   }
 
   @override
+  @mustCallSuper
   void didUpdateWidget(covariant ReactiveWidget oldWidget) {
     _stateExpando[oldWidget] = null;
     _stateExpando[widget] = this;
@@ -167,12 +169,14 @@ class ReactiveState extends State<ReactiveWidget>
   }
 
   @override
+  @mustCallSuper
   void activate() {
     super.activate();
     _stateExpando[widget] = this;
   }
 
   @override
+  @mustCallSuper
   void dispose() {
     stopReactivity();
     _stateExpando[widget] = null;
@@ -180,6 +184,7 @@ class ReactiveState extends State<ReactiveWidget>
   }
 
   @override
+  @mustCallSuper
   Widget build(BuildContext context) {
     _stateExpando[widget] = this;
 
